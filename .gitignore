@@ -1,3 +1,4 @@
+# CMake
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -9,3 +10,27 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+
+# Directories
+.vs/
+build/
+.idea/
+
+# macOS
+.DS_Store
+
+#imgui
+imgui.ini
+
+# solution files
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+
+# Files
+*.user
+*.sim
+
+# Prerequisites
+*.d
