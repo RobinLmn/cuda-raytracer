@@ -13,7 +13,7 @@ namespace app
     {
         ImGui::Begin("Viewport");
         {
-            ImGui::Image((void*)(intptr_t)render_texture_id, ImVec2(800, 800));
+            ImGui::Image((void*)(intptr_t)render_texture_id, ImVec2(1085, 1026));
         }
         ImGui::End();
     }
