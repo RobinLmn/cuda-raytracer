@@ -100,6 +100,10 @@
 /// - <a href="modules.html">GLM API documentation</a>
 /// - <a href="https://github.com/g-truc/glm/blob/master/manual.md">GLM Manual</a>
 
+#ifdef __CUDACC__
+#pragma nv_diag_suppress 20012
+#endif
+
 #include "detail/_fixes.hpp"
 
 #include "detail/setup.hpp"
@@ -134,3 +138,7 @@
 #include "matrix.hpp"
 #include "vector_relational.hpp"
 #include "integer.hpp"
+
+#ifdef __CUDACC__
+#pragma nv_diag_default 20012
+#endif

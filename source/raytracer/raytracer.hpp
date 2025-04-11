@@ -1,22 +1,23 @@
 #pragma once
 
 #include "raytracer/texture.hpp"
+#include "raytracer/scene.hpp"
 
 #include <glad/glad.h>
+
 #include <cuda_gl_interop.h>
 #include <cuda_runtime.h>
 #include <cuda_surface_types.h>
 
-#include "math/vec3.hpp"
-#include "math/mat4.hpp"
+#include <glm/glm.hpp>  
 
 namespace rAI
 {
     struct rendering_context
     {
-        vec3 camera_position;
-        vec3 camera_view;
-        mat4 camera_local_to_world;
+        glm::vec3 camera_position;
+        glm::vec3 camera_view_params;
+        glm::mat4 camera_local_to_world;
     };
 
     class raytracer
@@ -26,7 +27,7 @@ namespace rAI
         ~raytracer();
 
     public:
-        void render(const rendering_context& rendering_context);
+        void render(const rendering_context& rendering_context, const scene& scene);
         
         void resize(const int new_width, const int new_height);
         unsigned int get_render_texture() const;

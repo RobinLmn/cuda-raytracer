@@ -14,7 +14,7 @@ namespace app
         void update(float delta_time);
 
         glm::vec3 get_position() const;
-        glm::vec3 get_view() const;
+        glm::vec3 get_view_params() const;
         glm::mat4 get_local_to_world() const;
         
         void set_speed(const float speed);
@@ -33,7 +33,7 @@ namespace app
 
         glm::vec3 position;
         glm::vec3 direction;
-        glm::vec3 up;
+        const glm::vec3 up{ 0.0f, 1.0f, 0.0f };
 
     private:
         float yaw;

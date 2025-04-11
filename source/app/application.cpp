@@ -19,7 +19,14 @@ namespace app
         core::editor editor;
         rAI::raytracer raytracer{ 1085, 1026 };
 
-        app::camera camera{ 0.f, 45.f, 1085.f / 1026.f };
+        std::vector<rAI::sphere> spheres;
+        spheres.push_back(rAI::sphere{ glm::vec3{ 1.0f, 1.0f, 0.0f }, 0.6f });
+        spheres.push_back(rAI::sphere{ glm::vec3{ -1.0f, -1.0f, 0.0f }, 0.3f });
+
+        rAI::scene scene;
+        rAI::upload_scene(scene, spheres);
+
+        app::camera camera{ 0.1f, 45.f, 1085.f / 1026.f };
         
         editor.add_widget<viewport>(raytracer.get_render_texture());
 
@@ -37,8 +44,9 @@ namespace app
 
             camera.update(delta_time);
 
-            rAI::rendering_context rendering_context{ camera.get_position(), camera.get_view(), camera.get_local_to_world() };
-            raytracer.render(rendering_context);
+            rAI::rendering_context rendering_context{ camera.get_position(), camera.get_view_params(), camera.get_local_to_world() };
+            
+            raytracer.render(rendering_context, scene);
             
             editor.render();
         }
