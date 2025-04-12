@@ -21,6 +21,10 @@ namespace app
         void set_sensitivity(const float sensitivity);
 
     private:
+        void update_inverse_view_matrix();
+        void update_inverse_projection_matrix();
+
+    private:
         float near_plane;
         float far_plane;
 

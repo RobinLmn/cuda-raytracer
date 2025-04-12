@@ -23,8 +23,8 @@ namespace app
         , speed{ 6.0f }
         , sensitivity{ 0.005f }
     {
-        inverse_projection_matrix = glm::inverse(glm::perspective(glm::radians(fov), aspect, near_plane, far_plane));
-        inverse_view_matrix = glm::inverse(glm::lookAt(position, position + direction, up));
+        update_inverse_projection_matrix();
+        update_inverse_view_matrix();
     }
 
     void camera::update(float delta_time)
@@ -82,8 +82,18 @@ namespace app
 
         if (is_dirty)
         {
-            inverse_view_matrix = glm::inverse(glm::lookAt(position, position + direction, up));
+            update_inverse_view_matrix();
         }
+    }
+
+    void camera::update_inverse_view_matrix()
+    {
+        inverse_view_matrix = glm::inverse(glm::lookAt(position, position + direction, up));
+    }
+
+    void camera::update_inverse_projection_matrix()
+    {
+        inverse_projection_matrix = glm::inverse(glm::perspective(glm::radians(fov), aspect, near_plane, far_plane));
     }
 
     void camera::set_speed(const float speed)

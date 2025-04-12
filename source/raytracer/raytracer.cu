@@ -18,7 +18,10 @@ namespace rAI
         if (discriminant < 0.0f)
             return hit_info{ false, 0.0f, glm::vec3(0.0f), glm::vec3(0.0f) };
 
-        const float distance = (-b - sqrt(discriminant)) / (2.0f * a);
+        float distance = (-b - sqrt(discriminant)) / (2.0f * a);
+        if (distance < 0.0f)
+            return hit_info{ false, 0.0f, glm::vec3(0.0f), glm::vec3(0.0f) };
+
         const glm::vec3 point = r.origin + distance * r.direction;
         const glm::vec3 normal = glm::normalize(point - s.center);
         
