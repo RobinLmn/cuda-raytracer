@@ -3,6 +3,7 @@
 #include "core/log.hpp"
 
 #include "raytracer/ray.hpp"
+#include "raytracer/hit_info.hpp"
 
 namespace rAI
 {
@@ -34,7 +35,8 @@ namespace rAI
                 return hit.normal;
         }
 
-        return glm::vec3{ 0.0f };
+        const float a = 0.5f * (ray.direction.y + 1.0f);
+        return (1.0f - a) * glm::vec3{ 1.0f, 1.0f, 1.0f } + a * glm::vec3{ 0.5f, 0.7f, 1.0f };
     }
 
     __global__ void write_to_texture(cudaSurfaceObject_t surface, int width, int height, const rendering_context rendering_context, const scene scene)
@@ -44,13 +46,15 @@ namespace rAI
         
         if (y >= height || x >= width)
             return;
+
+        const glm::vec2 uv = glm::vec2{ (float)x / (float)width, 1.0f - (float)y / (float)height } * 2.0f - 1.0f;
+        const glm::vec4 target = rendering_context.inverse_projection_matrix * glm::vec4{ uv, 1.0f, 1.0f };
+
+        const glm::vec3 ray_origin = rendering_context.camera_position;
+        const glm::vec3 ray_direction = glm::vec3{ rendering_context.inverse_view_matrix * glm::vec4{ glm::normalize(glm::vec3{ target } / target.w), 0.0f } };
+
+        ray ray{ ray_origin, ray_direction };
         
-        const glm::vec2 uv = glm::vec2{ float(x) / float(width), float(y) / float(height) };
-
-        const glm::vec3 view_point_local = glm::vec3{ uv - 0.5f, 1.0f } * rendering_context.camera_view_params;
-        const glm::vec3 view_point = rendering_context.camera_local_to_world * glm::vec4{ view_point_local, 1.0f };
-
-        ray ray{ rendering_context.camera_position, view_point - rendering_context.camera_position};
         const glm::vec3 color = trace(scene, ray);
 
         uchar4 color_u = make_uchar4(color.r * 255, color.g * 255, color.b * 255, 255);

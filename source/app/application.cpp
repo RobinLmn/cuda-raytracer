@@ -26,7 +26,7 @@ namespace app
         rAI::scene scene;
         rAI::upload_scene(scene, spheres);
 
-        app::camera camera{ 0.1f, 45.f, 1085.f / 1026.f };
+        app::camera camera{ 0.1f, 100.0f, 45.f, 1085.f / 1026.f };
         
         editor.add_widget<viewport>(raytracer.get_render_texture());
 
@@ -44,7 +44,7 @@ namespace app
 
             camera.update(delta_time);
 
-            rAI::rendering_context rendering_context{ camera.get_position(), camera.get_view_params(), camera.get_local_to_world() };
+            rAI::rendering_context rendering_context{ camera.get_position(), camera.get_inverse_view_matrix(), camera.get_inverse_projection_matrix() };
             
             raytracer.render(rendering_context, scene);
             

@@ -4,72 +4,86 @@
 #include "core/input.hpp"
 
 #include <glfw/glfw3.h>
+
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <algorithm>
 
 namespace app
 {
-    camera::camera(const float near_plane, const float fov, const float aspect)
-        : near_plane(near_plane)
-        , fov(fov)
-        , aspect(aspect)
-        , position(0.0f, 0.0f, 5.0f)
-        , direction(0.0f, 0.0f, -1.0f)
-        , yaw(180.0f)
-        , pitch(0.0f)
-        , speed(10.0f)
-        , sensitivity(0.1f)
+    camera::camera(const float near_plane, const float far_plane, const float fov, const float aspect)
+        : near_plane{ near_plane }
+        , far_plane{ far_plane }
+        , fov{ fov }
+        , aspect{ aspect }
+        , position{ 0.0f, 0.0f, 5.0f }
+        , direction{ 0.0f, 0.0f, -1.0f }
+        , speed{ 6.0f }
+        , sensitivity{ 0.005f }
     {
+        inverse_projection_matrix = glm::inverse(glm::perspective(glm::radians(fov), aspect, near_plane, far_plane));
+        inverse_view_matrix = glm::inverse(glm::lookAt(position, position + direction, up));
     }
 
     void camera::update(float delta_time)
     {
-        glm::vec2 mouse_pos = core::input_manager::get_mouse_position();
+        const glm::vec2 mouse_pos = core::input_manager::get_mouse_position();
+        const glm::vec3 right = glm::cross(direction, up);
 
-        glm::vec3 right = glm::cross(up, direction);
+        bool is_dirty = false;
 
         if (core::input_manager::is_key_pressed(GLFW_KEY_D))
+        {
             position += right * speed * delta_time;
+            is_dirty = true;
+        }
         if (core::input_manager::is_key_pressed(GLFW_KEY_A))
+        {
             position -= right * speed * delta_time;
+            is_dirty = true;
+        }
         if (core::input_manager::is_key_pressed(GLFW_KEY_W))
+        {
             position += direction * speed * delta_time;
+            is_dirty = true;
+        }
         if (core::input_manager::is_key_pressed(GLFW_KEY_S))
+        {
             position -= direction * speed * delta_time;
+            is_dirty = true;
+        }
         if (core::input_manager::is_key_pressed(GLFW_KEY_SPACE))
+        {
             position += up * speed * delta_time;
+            is_dirty = true;
+        }
         if (core::input_manager::is_key_pressed(GLFW_KEY_LEFT_SHIFT))
+        {
             position -= up * speed * delta_time;
+            is_dirty = true;
+        }
 
 		if (core::input_manager::is_mouse_button_pressed(GLFW_MOUSE_BUTTON_2))
 		{
-			increment_yaw((mouse_pos.x - last_mouse_position.x) * sensitivity);
-			increment_pitch((last_mouse_position.y - mouse_pos.y) * sensitivity);
-            recalculate_direction();
+            glm::vec2 delta = mouse_pos - last_mouse_position;
+
+            float pitch_delta = delta.y * sensitivity;
+            float yaw_delta = delta.x * sensitivity;
+
+            glm::quat rotation = glm::normalize(glm::cross(glm::angleAxis(-pitch_delta, right), glm::angleAxis(-yaw_delta, up)));
+            direction = glm::rotate(rotation, direction);
+
+            is_dirty = true;
 		}
 
         last_mouse_position = mouse_pos;
-    }
 
-    void camera::increment_yaw(float delta)
-    {
-        yaw += delta;
-    }
-
-    void camera::increment_pitch(float delta)
-    {
-        pitch += delta;
-        pitch = std::clamp(pitch, -89.0f, 89.0f);
-    }
-
-    void camera::recalculate_direction()
-    {
-        const float yaw_rad = glm::radians(yaw);
-        const float pitch_rad = glm::radians(pitch);
-
-        direction = glm::vec3{ sin(yaw_rad) * cos(pitch_rad), sin(pitch_rad), cos(yaw_rad) * cos(pitch_rad) };
-        direction = glm::normalize(direction);
+        if (is_dirty)
+        {
+            inverse_view_matrix = glm::inverse(glm::lookAt(position, position + direction, up));
+        }
     }
 
     void camera::set_speed(const float speed)
@@ -80,31 +94,20 @@ namespace app
     void camera::set_sensitivity(const float sensitivity)
     {
         this->sensitivity = sensitivity;
-    }    
+    }
 
     glm::vec3 camera::get_position() const
     {
         return position;
     }
 
-    glm::mat4 camera::get_local_to_world() const
+    glm::mat4 camera::get_inverse_view_matrix() const
     {
-        glm::vec3 right = glm::normalize(glm::cross(up, direction));
-
-        glm::mat4 model = glm::mat4(1.0f);
-        model[0] = glm::vec4(-right, 0.0f);
-        model[1] = glm::vec4(up, 0.0f);
-        model[2] = glm::vec4(-direction, 0.0f);
-        model[3] = glm::vec4(position, 1.0f);
-
-        return model;
+        return inverse_view_matrix;
     }
 
-    glm::vec3 camera::get_view_params() const
+    glm::mat4 camera::get_inverse_projection_matrix() const
     {
-        float viewplane_height = 2.0f * near_plane * tan(glm::radians(fov * 0.5f));
-        float viewplane_width = viewplane_height * aspect;
-
-        return glm::vec3{ viewplane_width, viewplane_height, near_plane };
+        return inverse_projection_matrix;
     }
 }

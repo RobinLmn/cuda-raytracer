@@ -16,8 +16,8 @@ namespace rAI
     struct rendering_context
     {
         glm::vec3 camera_position;
-        glm::vec3 camera_view_params;
-        glm::mat4 camera_local_to_world;
+        glm::mat4 inverse_view_matrix;
+        glm::mat4 inverse_projection_matrix;
     };
 
     class raytracer
