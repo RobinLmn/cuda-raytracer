@@ -21,7 +21,6 @@ namespace app
         rAI::scene scene;
 
         {
-            std::vector<rAI::sphere> spheres;
 
             rAI::sphere sphere_ground{ glm::vec3{ 0.0f, -100.5f, -1.0f }, 100.0f, rAI::material{ glm::vec3{ 1.0f }, glm::vec3{ 0.0f }, 0.0f } };
 
@@ -30,6 +29,8 @@ namespace app
             rAI::sphere sphere_c = rAI::sphere{ glm::vec3{ 1.0f, 0.0f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.0f, 0.0f, 1.0f }, glm::vec3{ 0.0f }, 0.0f } };
 
             rAI::sphere light = rAI::sphere{ glm::vec3{ 0.0f, 4.0f, -5.0f }, 2.f, rAI::material{ glm::vec3{ 0.0f }, glm::vec3{ 1.0f }, 50.0f } };
+            
+            std::vector<rAI::sphere> spheres;
 
             spheres.push_back(sphere_ground);
             spheres.push_back(sphere_a);

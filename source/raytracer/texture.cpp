@@ -1,6 +1,5 @@
 #include "texture.hpp"
 
-#include <glad/glad.h>
 #include <vector>
 
 namespace rAI
@@ -8,6 +7,7 @@ namespace rAI
     texture::texture(const int width, const int height)
         : id{ 0 }
         , unit{ 0 }
+        , cuda_surface_write{ 0 }
     {
         glActiveTexture(GL_TEXTURE0 + unit);
 
@@ -21,11 +21,28 @@ namespace rAI
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        cudaGraphicsResource_t cuda_texture_resource;
+        cudaArray* cuda_array;
+
+        cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D,  cudaGraphicsRegisterFlagsSurfaceLoadStore);
+        cudaGraphicsMapResources(1, &cuda_texture_resource, 0);
+        cudaGraphicsSubResourceGetMappedArray(&cuda_array, cuda_texture_resource, 0, 0);
+        cudaGraphicsUnmapResources(1, &cuda_texture_resource, 0);
+
+        cudaResourceDesc resDesc = {};
+        resDesc.resType = cudaResourceTypeArray;
+        resDesc.res.array.array = cuda_array;
+        cudaCreateSurfaceObject(&cuda_surface_write, &resDesc);
+
+        cudaFreeArray(cuda_array);
     }
 
     texture::~texture()
     {
         glDeleteTextures(1, &id);
+
+        cudaDestroySurfaceObject(cuda_surface_write);
     }
     
     void texture::bind() const
@@ -48,5 +65,10 @@ namespace rAI
     unsigned int texture::get_unit() const
     {
         return unit;
+    }
+
+    cudaSurfaceObject_t texture::get_surface_write() const
+    {
+        return cuda_surface_write;
     }
 }

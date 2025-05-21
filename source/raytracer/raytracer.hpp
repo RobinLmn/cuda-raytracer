@@ -3,12 +3,6 @@
 #include "raytracer/texture.hpp"
 #include "raytracer/scene.hpp"
 
-#include <glad/glad.h>
-
-#include <cuda_gl_interop.h>
-#include <cuda_runtime.h>
-#include <cuda_surface_types.h>
-
 #include <glm/glm.hpp>  
 
 namespace rAI
@@ -24,7 +18,6 @@ namespace rAI
     {
     public:
         raytracer(const int width, const int height);
-        ~raytracer();
 
     public:
         void render(const rendering_context& rendering_context, const scene& scene);
@@ -37,9 +30,5 @@ namespace rAI
 
         int width;
         int height;
-        
-        cudaGraphicsResource_t cuda_texture_resource;
-        cudaArray* cuda_array;
-        cudaSurfaceObject_t cuda_surface_write;
     };
 }
