@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build (Debug)",
+            "type": "shell",
+            "command": "msbuild build/rAI.sln /p:Configuration=Debug",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build (Release)",
+            "type": "shell",
+            "command": "msbuild build/rAI.sln /p:Configuration=Release",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Genereate Project",
+            "type": "shell",
+            "command": "rmdir build; mkdir build; cmake .. -G 'Visual Studio 17 2022'",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "Open in Visual Studio",
+            "type": "shell",
+            "command": "start devenv.exe build/rAI.sln",
+            "presentation": {
+                "reveal": "silent"
+            }
+        }
+    ]
+}

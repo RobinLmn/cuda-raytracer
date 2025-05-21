@@ -1,5 +1,7 @@
 #pragma once
 
+#include "raytracer/material.hpp"
+
 #include <glm/glm.hpp>
 
 namespace rAI
@@ -8,5 +10,6 @@ namespace rAI
     {
         glm::vec3 center;
         float radius;
+        material material;
     };
 }

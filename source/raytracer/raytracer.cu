@@ -7,6 +7,36 @@
 
 namespace rAI
 {
+    __device__ float random_pcg_float(int& random_state)
+    {
+        random_state = random_state * 747796405 + 2891336453;
+        unsigned int result = ((random_state >> ((random_state >> 28) + 4)) ^ random_state) * 277803737;
+        result = (result >> 22) ^ result;
+        return (float)(result) / 4294967295.0f;
+    }
+
+    __device__ float random_normal(int& random_state)
+    {
+        const float theta = 2.0f * 3.1415926f * random_pcg_float(random_state);
+        const float rho = sqrt(-2.0f * log(random_pcg_float(random_state)));
+        return rho * cos(theta);
+    }
+
+    __device__ glm::vec3 random_direction(int& random_state)
+    {
+        const float x = random_normal(random_state);
+        const float y = random_normal(random_state);
+        const float z = random_normal(random_state);
+        return glm::normalize(glm::vec3{ x, y, z });
+    }
+
+    __device__ glm::vec3 random_hemisphere_direction(const glm::vec3& normal, int& random_state)
+    {
+        const glm::vec3 direction = random_direction(random_state);
+        const float sign = glm::dot(direction, normal) > 0.0f ? 1.0f : -1.0f;
+        return direction * sign;
+    }
+
     __device__ hit_info ray_sphere_intersection(const ray& r, const sphere& s)
     {
         const glm::vec3 oc = r.origin - s.center;
@@ -25,21 +55,49 @@ namespace rAI
         const glm::vec3 point = r.origin + distance * r.direction;
         const glm::vec3 normal = glm::normalize(point - s.center);
         
-        return hit_info{ true, distance, point, normal };
+        return hit_info{ true, distance, point, normal, s.material };
     }
 
-    __device__ glm::vec3 trace(const scene& scene, const ray& ray)
+    __device__ hit_info get_closest_hit(const scene& scene, const ray& ray)
     {
+        hit_info closest_hit = hit_info{ false, FLT_MAX, glm::vec3(0.0f), glm::vec3(0.0f) };
         for (int i = 0; i < scene.spheres_count; i++)
         {
             hit_info hit = ray_sphere_intersection(ray, scene.spheres[i]);
 
-            if (hit.did_hit)
-                return hit.normal;
+            if (hit.did_hit && hit.distance < closest_hit.distance)
+                closest_hit = hit;
         }
 
-        const float a = 0.5f * (ray.direction.y + 1.0f);
-        return (1.0f - a) * glm::vec3{ 1.0f, 1.0f, 1.0f } + a * glm::vec3{ 0.5f, 0.7f, 1.0f };
+        return closest_hit;
+    }
+
+    __device__ glm::vec3 trace(const scene& scene, const ray& starting_ray, int& random_state)
+    {
+        const int max_bounces = 20;
+
+        glm::vec3 incoming_light = glm::vec3{ 0.0f };
+        glm::vec3 ray_color = glm::vec3{ 1.0f };
+        ray ray = starting_ray;
+
+        for ( int i = 0; i < max_bounces; i++)
+        {
+            const hit_info closest_hit = get_closest_hit(scene, ray);
+            if (closest_hit.did_hit)
+            {
+                ray.origin = closest_hit.point;
+                ray.direction = random_hemisphere_direction(closest_hit.normal, random_state);
+
+                incoming_light += closest_hit.material.emission_strength * closest_hit.material.emission_color * ray_color;
+                ray_color *= closest_hit.material.color;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return incoming_light;
     }
 
     __global__ void write_to_texture(cudaSurfaceObject_t surface, int width, int height, const rendering_context rendering_context, const scene scene)
@@ -58,7 +116,17 @@ namespace rAI
 
         ray ray{ ray_origin, ray_direction };
         
-        const glm::vec3 color = trace(scene, ray);
+        int random_state = y + width * x;
+
+        glm::vec3 color = glm::vec3{ 0.0f };
+        const int rays_per_pixel = 100;
+
+        for (int i = 0; i < rays_per_pixel; i++)
+        {
+            color += trace(scene, ray, random_state);
+        }
+
+        color /= rays_per_pixel;
 
         uchar4 color_u = make_uchar4(color.r * 255, color.g * 255, color.b * 255, 255);
         surf2Dwrite(color_u, surface, x * sizeof(uchar4), y);

@@ -18,13 +18,27 @@ namespace app
         core::window window{ 1920, 1080, "Engine" };
         core::editor editor;
         rAI::raytracer raytracer{ 1085, 1026 };
-
-        std::vector<rAI::sphere> spheres;
-        spheres.push_back(rAI::sphere{ glm::vec3{ 1.0f, 1.0f, 0.0f }, 0.6f });
-        spheres.push_back(rAI::sphere{ glm::vec3{ -1.0f, -1.0f, 0.0f }, 0.3f });
-
         rAI::scene scene;
-        rAI::upload_scene(scene, spheres);
+
+        {
+            std::vector<rAI::sphere> spheres;
+
+            rAI::sphere sphere_ground{ glm::vec3{ 0.0f, -100.5f, -1.0f }, 100.0f, rAI::material{ glm::vec3{ 1.0f }, glm::vec3{ 0.0f }, 0.0f } };
+
+            rAI::sphere sphere_a = rAI::sphere{ glm::vec3{ 0.0f, 0.0f, -1.2f }, 0.5f, rAI::material{ glm::vec3{ 1.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f }, 0.0f } };
+            rAI::sphere sphere_b = rAI::sphere{ glm::vec3{ -1.0f, 0.0f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.0f, 1.0f, 0.0f }, glm::vec3{ 0.0f }, 0.0f } };
+            rAI::sphere sphere_c = rAI::sphere{ glm::vec3{ 1.0f, 0.0f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.0f, 0.0f, 1.0f }, glm::vec3{ 0.0f }, 0.0f } };
+
+            rAI::sphere light = rAI::sphere{ glm::vec3{ 0.0f, 4.0f, -5.0f }, 2.f, rAI::material{ glm::vec3{ 0.0f }, glm::vec3{ 1.0f }, 50.0f } };
+
+            spheres.push_back(sphere_ground);
+            spheres.push_back(sphere_a);
+            spheres.push_back(sphere_b);
+            spheres.push_back(sphere_c);
+            spheres.push_back(light);
+
+            rAI::upload_scene(scene, spheres);
+        }
 
         app::camera camera{ 0.1f, 100.0f, 45.f, 1085.f / 1026.f };
         
