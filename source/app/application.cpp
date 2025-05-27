@@ -22,7 +22,7 @@ namespace app
         rAI::scene scene;
 
         {
-            rAI::sphere sphere_ground{ glm::vec3{ 0.0f, -96.5f, -1.0f }, 100.0f, rAI::material{ glm::vec3{ 0.7f, 0.4f, 0.9f }, glm::vec3{ 0.0f }, 0.0f } };
+            rAI::sphere sphere_ground{ glm::vec3{ 0.0f, -98.5f, -1.0f }, 100.0f, rAI::material{ glm::vec3{ 0.7f, 0.4f, 0.9f }, glm::vec3{ 0.0f }, 0.0f } };
 
             rAI::sphere sphere_a = rAI::sphere{ glm::vec3{ 0.0f, 2.0f, -1.2f }, 0.5f, rAI::material{ glm::vec3{ 1.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f }, 0.0f } };
             rAI::sphere sphere_b = rAI::sphere{ glm::vec3{ -1.0f, 2.0f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.0f, 1.0f, 0.0f }, glm::vec3{ 0.0f }, 0.0f } };

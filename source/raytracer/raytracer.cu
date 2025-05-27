@@ -96,17 +96,17 @@ namespace rAI
 
         incoming_light /= static_cast<float>(rendering_context.rays_per_pixel);
 
-        float4 new_color = make_float4(incoming_light.r, incoming_light.g, incoming_light.b, 1.f);
+        const float4 new_color = make_float4(incoming_light.r, incoming_light.g, incoming_light.b, 1.f);
 
         float4 previous_color;
         surf2Dread(&previous_color, accumulation_surface, x * sizeof(float4), y);
         
-        float4 accumulated_color = previous_color + new_color;
+        const float4 accumulated_color = previous_color + new_color;
         surf2Dwrite(accumulated_color, accumulation_surface, x * sizeof(float4), y);
 
-        float4 average_color = accumulated_color / (frame_index + 1);
+        const float4 average_color = accumulated_color / (frame_index + 1);
 
-        uchar4 average_color_u = make_uchar4(average_color.x * 255, average_color.y * 255, average_color.z * 255, average_color.w * 255);
+        const uchar4 average_color_u = make_uchar4(average_color.x * 255, average_color.y * 255, average_color.z * 255, average_color.w * 255);
         surf2Dwrite(average_color_u, output_surface, x * sizeof(uchar4), y);
     }
 
