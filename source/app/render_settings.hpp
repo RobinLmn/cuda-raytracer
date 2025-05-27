@@ -10,6 +10,7 @@ namespace app
     {
         int max_bounces;
         int rays_per_pixel;
+        
         rAI::sky_box sky_box;
     };
 

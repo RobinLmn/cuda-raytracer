@@ -24,6 +24,7 @@ namespace app
             ImGui::Separator();
             ImGui::Text("Sky Box Settings");
 
+            ImGui::Checkbox("Is Hidden", &settings.sky_box.is_hidden);
             ImGui::ColorEdit3("Ground Color", (float*)glm::value_ptr(settings.sky_box.ground_color));
             ImGui::ColorEdit3("Horizon Color", (float*)glm::value_ptr(settings.sky_box.horizon_color));
             ImGui::ColorEdit3("Zenith Color", (float*)glm::value_ptr(settings.sky_box.zenith_color));

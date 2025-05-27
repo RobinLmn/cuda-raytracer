@@ -3,6 +3,7 @@
 #include "raytracer/texture.hpp"
 #include "raytracer/scene.hpp"
 #include "raytracer/sky_box.hpp"
+#include "raytracer/cuda_texture.hpp"
 
 #include <glm/glm.hpp>
 
@@ -33,8 +34,11 @@ namespace rAI
 
     private:
         texture render_texture;
+        cuda_texture accumulation_texture;
 
         int width;
         int height;
+
+        int frame_index;
     };
 }

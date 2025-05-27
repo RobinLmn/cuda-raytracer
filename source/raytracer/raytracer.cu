@@ -4,6 +4,7 @@
 
 #include "raytracer/random.cuh"
 #include "raytracer/intersection.cuh"
+#include "raytracer/cuda_utils.cuh"
 
 #include <curand_kernel.h>
 
@@ -11,6 +12,9 @@ namespace rAI
 {
     __device__ glm::vec3 get_sky_light(const sky_box& sky, const ray& ray)
     {
+        if (sky.is_hidden)
+            return glm::vec3{ 0.f };
+            
         const float horizon_to_zenith_gradient_t = powf(glm::smoothstep(0.0f, 0.4f, ray.direction.y), 0.35f);
         const glm::vec3 horizon_to_zenith_gradient = glm::mix(sky.horizon_color, sky.zenith_color, horizon_to_zenith_gradient_t);
 
@@ -64,7 +68,7 @@ namespace rAI
         return incoming_light;
     }
 
-    __global__ void write_to_texture(cudaSurfaceObject_t surface, int width, int height, const rendering_context rendering_context, const scene scene)
+    __global__ void write_to_texture(cudaSurfaceObject_t output_surface, cudaSurfaceObject_t accumulation_surface, int width, int height, const rendering_context rendering_context, const scene scene, const int frame_index)
     {
         const int y = blockIdx.y * blockDim.y + threadIdx.y;
         const int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -76,7 +80,7 @@ namespace rAI
         const glm::vec4 target = rendering_context.inverse_projection_matrix * glm::vec4{ uv, 1.0f, 1.0f };
         
         curandState random_state;
-        curand_init(y + width * x, 0, 0, &random_state);
+        curand_init(y + width * x + frame_index * 719393, 0, 0, &random_state);
         
         glm::vec3 incoming_light = glm::vec3{ 0.0f };
 
@@ -92,14 +96,26 @@ namespace rAI
 
         incoming_light /= static_cast<float>(rendering_context.rays_per_pixel);
 
-        uchar4 color_u = make_uchar4(incoming_light.r * 255, incoming_light.g * 255, incoming_light.b * 255, 255);
-        surf2Dwrite(color_u, surface, x * sizeof(uchar4), y);
+        float4 new_color = make_float4(incoming_light.r, incoming_light.g, incoming_light.b, 1.f);
+
+        float4 previous_color;
+        surf2Dread(&previous_color, accumulation_surface, x * sizeof(float4), y);
+        
+        float4 accumulated_color = previous_color + new_color;
+        surf2Dwrite(accumulated_color, accumulation_surface, x * sizeof(float4), y);
+
+        float4 average_color = accumulated_color / (frame_index + 1);
+
+        uchar4 average_color_u = make_uchar4(average_color.x * 255, average_color.y * 255, average_color.z * 255, average_color.w * 255);
+        surf2Dwrite(average_color_u, output_surface, x * sizeof(uchar4), y);
     }
 
     __host__ raytracer::raytracer(const int width, const int height)
         : width{ width }
         , height{ height }
         , render_texture{ width, height }
+        , accumulation_texture{ width, height, cudaCreateChannelDesc<float4>() }
+        , frame_index{ 0 }
     {
     }
 
@@ -111,9 +127,11 @@ namespace rAI
         dim3 blocks((width + thread_x - 1) / thread_x, (height + thread_y - 1) / thread_y);
         dim3 threads(thread_x, thread_y);
 
-        write_to_texture<<<blocks, threads>>>(render_texture.get_surface_write(), width, height, rendering_context, scene);
+        write_to_texture<<<blocks, threads>>>(render_texture.get_surface(), accumulation_texture.get_surface(), width, height, rendering_context, scene, frame_index);
 
         cudaDeviceSynchronize();
+
+        frame_index++;
     }
 
     __host__ unsigned int raytracer::get_render_texture() const

@@ -6,6 +6,8 @@ namespace rAI
 {
     struct sky_box
     {
+        bool is_hidden;
+        
         glm::vec3 ground_color;
         glm::vec3 zenith_color;
         glm::vec3 horizon_color;

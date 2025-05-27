@@ -21,12 +21,13 @@ namespace rAI
         unsigned int get_id() const;
         unsigned int get_unit() const;
 
-        cudaSurfaceObject_t get_surface_write() const;
+        cudaSurfaceObject_t get_surface() const;
 
     private:
         unsigned int id;
         unsigned int unit;
 
         cudaSurfaceObject_t cuda_surface_write;
+        cudaArray_t cuda_array;
     };
 }

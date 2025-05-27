@@ -23,7 +23,6 @@ namespace rAI
         glBindTexture(GL_TEXTURE_2D, 0);
 
         cudaGraphicsResource_t cuda_texture_resource;
-        cudaArray* cuda_array;
 
         cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D,  cudaGraphicsRegisterFlagsSurfaceLoadStore);
         cudaGraphicsMapResources(1, &cuda_texture_resource, 0);
@@ -42,7 +41,11 @@ namespace rAI
     {
         glDeleteTextures(1, &id);
 
-        cudaDestroySurfaceObject(cuda_surface_write);
+        if (cuda_surface_write)
+            cudaDestroySurfaceObject(cuda_surface_write);
+
+        if (cuda_array)
+            cudaFreeArray(cuda_array);
     }
     
     void texture::bind() const
@@ -67,7 +70,7 @@ namespace rAI
         return unit;
     }
 
-    cudaSurfaceObject_t texture::get_surface_write() const
+    cudaSurfaceObject_t texture::get_surface() const
     {
         return cuda_surface_write;
     }
