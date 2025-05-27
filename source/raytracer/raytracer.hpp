@@ -2,8 +2,9 @@
 
 #include "raytracer/texture.hpp"
 #include "raytracer/scene.hpp"
+#include "raytracer/sky_box.hpp"
 
-#include <glm/glm.hpp>  
+#include <glm/glm.hpp>
 
 namespace rAI
 {
@@ -12,6 +13,11 @@ namespace rAI
         glm::vec3 camera_position;
         glm::mat4 inverse_view_matrix;
         glm::mat4 inverse_projection_matrix;
+
+        int max_bounces;
+        int rays_per_pixel;
+
+        sky_box sky_box;
     };
 
     class raytracer
