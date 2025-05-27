@@ -3,12 +3,16 @@
 #include "core/log.hpp"
 #include "core/window.hpp"
 #include "core/editor.hpp"
+#include "core/file_utility.hpp"
 
 #include "raytracer/raytracer.hpp"
 
 #include "app/camera.hpp"
 #include "app/viewport.hpp"
 #include "app/render_settings.hpp"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image/stb_image_write.h>
 
 #include <chrono>
 
@@ -40,7 +44,7 @@ namespace app
 
         camera camera{ 0.1f, 100.0f, 45.f, 1085.f / 1026.f };
         
-        editor.add_widget<viewport>(raytracer.get_render_texture());
+        editor.add_widget<viewport>(raytracer.get_render_texture().get_id());
 
         const auto clock = std::chrono::high_resolution_clock{};
         auto last_time = clock.now();
@@ -55,8 +59,19 @@ namespace app
         render_settings_data.sky_box.sun_direction = glm::normalize(glm::vec3(1.0f, 1.0f, -1.0f));
         render_settings_data.sky_box.sun_intensity = 50.0f;
         render_settings_data.sky_box.sun_focus = 514.0f;
+        render_settings_data.is_rendering = false;
 
-        editor.add_widget<render_settings>(render_settings_data);
+        const auto on_save_image = [&raytracer]()
+        {
+            const std::string& filename = core::new_file_dialog("render.png", "../docs", "Png Files\0*.png\0");
+
+            const std::vector<unsigned char>& pixels = raytracer.get_render_texture().read_pixels();
+            stbi_write_png(filename.c_str(), 1085, 1026, 4, pixels.data(), 1085 * 4);
+        };
+
+        editor.add_widget<render_settings>(render_settings_data, on_save_image);
+
+        bool was_rendering = render_settings_data.is_rendering;
 
         while (window.is_open())
         {
@@ -67,7 +82,16 @@ namespace app
 
             window.update();
 
-            camera.update(delta_time);
+            if (!render_settings_data.is_rendering)
+            {
+                camera.update(delta_time);
+            }
+
+            if (was_rendering && !render_settings_data.is_rendering)
+            {
+                raytracer.reset_accumulation();
+            }
+            was_rendering = render_settings_data.is_rendering;
 
             rAI::rendering_context rendering_context
             { 
@@ -79,8 +103,8 @@ namespace app
                 render_settings_data.sky_box,  
             };
             
-            raytracer.render(rendering_context, scene);
-            
+            raytracer.render(rendering_context, scene, render_settings_data.is_rendering);
+
             editor.render();
         }
     }

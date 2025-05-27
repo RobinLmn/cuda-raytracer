@@ -2,6 +2,8 @@
 
 #include "core/widget.hpp"
 
+#include <chrono>
+
 namespace app
 {
     class viewport : public core::widget
@@ -14,5 +16,8 @@ namespace app
 
     private:
         unsigned int render_texture_id;
+
+        std::chrono::high_resolution_clock clock;
+        std::chrono::time_point<std::chrono::high_resolution_clock> last_time;
     };
 }

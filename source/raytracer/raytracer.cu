@@ -68,7 +68,7 @@ namespace rAI
         return incoming_light;
     }
 
-    __global__ void write_to_texture(cudaSurfaceObject_t output_surface, cudaSurfaceObject_t accumulation_surface, int width, int height, const rendering_context rendering_context, const scene scene, const int frame_index)
+    __global__ void write_to_texture(cudaSurfaceObject_t output_surface, cudaSurfaceObject_t accumulation_surface, int width, int height, const rendering_context rendering_context, const scene scene, const int frame_index, const bool should_accumulate)
     {
         const int y = blockIdx.y * blockDim.y + threadIdx.y;
         const int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -98,6 +98,14 @@ namespace rAI
 
         const float4 new_color = make_float4(incoming_light.r, incoming_light.g, incoming_light.b, 1.f);
 
+        if (!should_accumulate)
+        {
+            const uchar4 new_color_u = make_uchar4(new_color.x * 255, new_color.y * 255, new_color.z * 255, new_color.w * 255);
+            surf2Dwrite(new_color_u, output_surface, x * sizeof(uchar4), y);
+
+            return;
+        }
+
         float4 previous_color;
         surf2Dread(&previous_color, accumulation_surface, x * sizeof(float4), y);
         
@@ -110,6 +118,18 @@ namespace rAI
         surf2Dwrite(average_color_u, output_surface, x * sizeof(uchar4), y);
     }
 
+    __global__ void reset_accumulation_surface(cudaSurfaceObject_t accumulation_surface, int width, int height)
+    {
+        const int y = blockIdx.y * blockDim.y + threadIdx.y;
+        const int x = blockIdx.x * blockDim.x + threadIdx.x;
+        
+        if (y >= height || x >= width)
+            return;
+
+        const float4 clear_color = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+        surf2Dwrite(clear_color, accumulation_surface, x * sizeof(float4), y);
+    }
+
     __host__ raytracer::raytracer(const int width, const int height)
         : width{ width }
         , height{ height }
@@ -119,7 +139,7 @@ namespace rAI
     {
     }
 
-    __host__ void raytracer::render(const rendering_context& rendering_context, const scene& scene)
+    __host__ void raytracer::reset_accumulation()
     {
         const int thread_x = 16;
         const int thread_y = 16;
@@ -127,15 +147,31 @@ namespace rAI
         dim3 blocks((width + thread_x - 1) / thread_x, (height + thread_y - 1) / thread_y);
         dim3 threads(thread_x, thread_y);
 
-        write_to_texture<<<blocks, threads>>>(render_texture.get_surface(), accumulation_texture.get_surface(), width, height, rendering_context, scene, frame_index);
+        reset_accumulation_surface<<<blocks, threads>>>(accumulation_texture.get_surface(), width, height);
+        
+        cudaDeviceSynchronize();
+
+        frame_index = 0;
+    }
+
+    __host__ void raytracer::render(const rendering_context& rendering_context, const scene& scene, const bool should_accumulate)
+    {
+        const int thread_x = 16;
+        const int thread_y = 16;
+
+        dim3 blocks((width + thread_x - 1) / thread_x, (height + thread_y - 1) / thread_y);
+        dim3 threads(thread_x, thread_y);
+
+        write_to_texture<<<blocks, threads>>>(render_texture.get_surface(), accumulation_texture.get_surface(), width, height, rendering_context, scene, frame_index, should_accumulate);
 
         cudaDeviceSynchronize();
 
-        frame_index++;
+        if (should_accumulate)
+            frame_index++;
     }
 
-    __host__ unsigned int raytracer::get_render_texture() const
+    __host__ const texture& raytracer::get_render_texture() const
     {
-        return render_texture.get_id();
+        return render_texture;
     }
 }

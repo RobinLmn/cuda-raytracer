@@ -27,10 +27,11 @@ namespace rAI
         raytracer(const int width, const int height);
 
     public:
-        void render(const rendering_context& rendering_context, const scene& scene);
+        void render(const rendering_context& rendering_context, const scene& scene, const bool should_accumulate);
+        void reset_accumulation();
         
         void resize(const int new_width, const int new_height);
-        unsigned int get_render_texture() const;
+        const texture& get_render_texture() const;
 
     private:
         texture render_texture;

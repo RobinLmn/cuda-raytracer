@@ -4,10 +4,13 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include <glad/glad.h>
+
 namespace app
 {
-    render_settings::render_settings(render_settings_data& settings)
-        : settings(settings)
+    render_settings::render_settings(render_settings_data& settings, const std::function<void()>& on_save_image_delegate)
+        : settings{ settings }
+        , on_save_image_delegate{ on_save_image_delegate }
     {
     }
 
@@ -15,6 +18,27 @@ namespace app
     {
         if (ImGui::Begin("Render Settings"))
         {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+            
+            const float window_width = ImGui::GetWindowWidth();
+            const float button_width = 60.0f;
+            const float total_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x;
+            ImGui::SetCursorPosX((window_width - total_width) * 0.5f);
+            
+            if (ImGui::Button(settings.is_rendering ? "Stop" : "Render", ImVec2(button_width, 24)))
+            {
+                settings.is_rendering = !settings.is_rendering;
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Save", ImVec2(button_width, 24)))
+                on_save_image_delegate();
+            
+            ImGui::PopStyleVar(2);
+            ImGui::Separator();
+
             ImGui::Text("Ray Tracing Settings");
             ImGui::Separator();
 

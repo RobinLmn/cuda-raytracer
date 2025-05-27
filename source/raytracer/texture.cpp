@@ -5,7 +5,9 @@
 namespace rAI
 {
     texture::texture(const int width, const int height)
-        : id{ 0 }
+        : width{ width }
+        , height{ height }
+        , id{ 0 }
         , unit{ 0 }
         , cuda_surface_write{ 0 }
     {
@@ -73,5 +75,19 @@ namespace rAI
     cudaSurfaceObject_t texture::get_surface() const
     {
         return cuda_surface_write;
+    }
+
+    std::vector<unsigned char> texture::read_pixels() const
+    {
+        glFinish();
+        
+        glBindTexture(GL_TEXTURE_2D, id);
+
+        std::vector<unsigned char> pixels(width * height * 4);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return pixels;
     }
 }
