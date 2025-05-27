@@ -12,6 +12,9 @@ namespace app
         bool is_rendering;
         int max_bounces;
         int rays_per_pixel;
+        float diverge_strength;
+        float defocus_strength;
+        float focus_distance;
         
         rAI::sky_box sky_box;
     };

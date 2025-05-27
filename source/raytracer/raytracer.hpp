@@ -17,6 +17,9 @@ namespace rAI
 
         int max_bounces;
         int rays_per_pixel;
+        float diverge_strength;
+        float defocus_strength;
+        float focus_distance;
 
         sky_box sky_box;
     };

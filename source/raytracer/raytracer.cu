@@ -52,11 +52,16 @@ namespace rAI
             const hit_info& closest_hit = get_closest_hit(scene, ray);
             if (closest_hit.did_hit)
             {
+                const glm::vec3 diffuse = glm::normalize(closest_hit.normal + random_direction(random_state));
+                const glm::vec3 specular = glm::reflect(ray.direction, closest_hit.normal);
+
+                const bool specular_bounce = closest_hit.material.specular_probability >= random_float(random_state);
+
                 ray.origin = closest_hit.point;
-                ray.direction = random_hemisphere_direction(closest_hit.normal, random_state);
+                ray.direction = glm::mix(diffuse, specular, closest_hit.material.smoothness * specular_bounce);
 
                 incoming_light += closest_hit.material.emission_strength * closest_hit.material.emission_color * ray_color;
-                ray_color *= closest_hit.material.color;
+                ray_color *= specular_bounce ? closest_hit.material.specular_color : closest_hit.material.color;
             }
             else
             {
@@ -72,13 +77,13 @@ namespace rAI
     {
         const int y = blockIdx.y * blockDim.y + threadIdx.y;
         const int x = blockIdx.x * blockDim.x + threadIdx.x;
-        
+
         if (y >= height || x >= width)
             return;
 
         const glm::vec2 uv = glm::vec2{ (float)x / (float)width, 1.0f - (float)y / (float)height } * 2.0f - 1.0f;
         const glm::vec4 target = rendering_context.inverse_projection_matrix * glm::vec4{ uv, 1.0f, 1.0f };
-        
+
         curandState random_state;
         curand_init(y + width * x + frame_index * 719393, 0, 0, &random_state);
         
@@ -86,11 +91,20 @@ namespace rAI
 
         for (int i = 0; i < rendering_context.rays_per_pixel; i++)
         {
-            const glm::vec3 ray_origin = rendering_context.camera_position;
-            const glm::vec3 ray_direction = glm::vec3{ rendering_context.inverse_view_matrix * glm::vec4{ glm::normalize(glm::vec3{ target } / target.w), 0.0f } };
+            const glm::vec3 direction = glm::vec3{ rendering_context.inverse_view_matrix * glm::vec4{ glm::normalize(glm::vec3{ target } / target.w), 0.0f } };
+            const glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+            const glm::vec3 up = glm::normalize(glm::cross(right, direction));
+
+            const glm::vec3 focal_point = rendering_context.camera_position + direction * rendering_context.focus_distance;
+
+            const glm::vec2 jitter = random_point_in_circle(random_state) * rendering_context.diverge_strength / static_cast<float>(width);
+            const glm::vec3 jittered_focal_point = focal_point + right * jitter.x + up * jitter.y;
+            const glm::vec2 defocus_jitter = random_point_in_circle(random_state) * rendering_context.defocus_strength / static_cast<float>(width);
+
+            const glm::vec3 ray_origin = rendering_context.camera_position + right * defocus_jitter.x + up * defocus_jitter.y;
+            const glm::vec3 ray_direction = glm::normalize(jittered_focal_point - ray_origin);
 
             ray ray{ ray_origin, ray_direction };
-
             incoming_light += trace(scene, ray, random_state, rendering_context.max_bounces, rendering_context.sky_box);
         }
 

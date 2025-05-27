@@ -10,5 +10,10 @@ namespace rAI
         
         glm::vec3 emission_color;
         float emission_strength;
+
+        float smoothness;
+
+        glm::vec3 specular_color;
+        float specular_probability;
     };
 }

@@ -44,6 +44,9 @@ namespace app
 
             ImGui::DragInt("Max Bounces", &settings.max_bounces, 1.0f, 1, 32);
             ImGui::DragInt("Rays per Pixel", &settings.rays_per_pixel, 1.0f, 1, 1000);
+            ImGui::DragFloat("Diverge Strength", &settings.diverge_strength, 0.2f, 0.f, 200.f);
+            ImGui::DragFloat("Defocus Strength", &settings.defocus_strength, 0.2f, 0.f, 200.f);
+            ImGui::DragFloat("Focus Distance", &settings.focus_distance, 0.1f, 0.f, 20.f);
 
             ImGui::Separator();
             ImGui::Text("Sky Box Settings");
