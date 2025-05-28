@@ -6,6 +6,7 @@
 #include "core/file_utility.hpp"
 
 #include "raytracer/raytracer.hpp"
+#include "raytracer/mesh_loader.hpp"
 
 #include "app/camera.hpp"
 #include "app/viewport.hpp"
@@ -26,26 +27,25 @@ namespace app
         rAI::scene scene;
 
         {
-            //rAI::sphere sphere_ground{ glm::vec3{ 0.0f, -98.5f, -1.0f }, 100.0f, rAI::material{ glm::vec3{ 0.7f, 0.4f, 0.9f }, glm::vec3{ 0.0f }, 0.0f, 0.f } };
+            // rAI::sphere sphere_a = rAI::sphere{ glm::vec3{ -1.2f, 0.5f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.9f, 0.1f, 0.3f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
+            // rAI::sphere sphere_b = rAI::sphere{ glm::vec3{ -0.3f, 0.5f, -5.0f }, 0.5f, rAI::material{ glm::vec3{ 0.2f, 0.8f, 0.4f}, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
+            // rAI::sphere sphere_c = rAI::sphere{ glm::vec3{ 1.2f, 0.5f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.4f, 0.2f, 0.9f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
 
-            rAI::sphere sphere_a = rAI::sphere{ glm::vec3{ -1.2f, 2.0f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 1.f, 0.f, 0.f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
-            rAI::sphere sphere_b = rAI::sphere{ glm::vec3{ 0.0f, 2.0f, -6.0f }, 0.5f, rAI::material{ glm::vec3{ 0.f, 1.f, 0.f}, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
-            rAI::sphere sphere_c = rAI::sphere{ glm::vec3{ 1.2f, 2.0f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.f, 0.f, 1.f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
+            // rAI::sphere sphere_d = rAI::sphere{ glm::vec3{ -5.f, 0.5f, -10.0f }, 0.5f, rAI::material{ glm::vec3{ 0.9f, 0.6f, 0.1f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
+            // rAI::sphere sphere_e = rAI::sphere{ glm::vec3{ 2.f, 0.5f, -10.0f }, 0.5f, rAI::material{ glm::vec3{ 0.1f, 0.7f, 0.8f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
 
-            rAI::sphere sphere_d = rAI::sphere{ glm::vec3{ -1.5f, 2.0f, -13.0f }, 0.5f, rAI::material{ glm::vec3{ 1.f, 0.f, 0.f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
-            rAI::sphere sphere_e = rAI::sphere{ glm::vec3{ 1.5f, 2.0f, -13.0f }, 0.5f, rAI::material{ glm::vec3{ 0.f, 0.f, 1.f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
+            // std::vector<rAI::sphere> spheres;
 
+            // spheres.push_back(sphere_a);
+            // spheres.push_back(sphere_b);
+            // spheres.push_back(sphere_c);
+            // spheres.push_back(sphere_d);
+            // spheres.push_back(sphere_e);
 
-            std::vector<rAI::sphere> spheres;
+            rAI::material bed_material{ glm::vec3{ 0.8f, 0.8f, 0.8f }, glm::vec3{ 0.0f }, 0.0f, 0.0f, glm::vec3{ 1.0f }, 0.0f };
+            std::vector<rAI::mesh> meshes = rAI::load_meshes_from_obj("../content/bed.obj", bed_material);
 
-            //spheres.push_back(sphere_ground);
-            spheres.push_back(sphere_a);
-            spheres.push_back(sphere_b);
-            spheres.push_back(sphere_c);
-            spheres.push_back(sphere_d);
-            spheres.push_back(sphere_e);
-
-            rAI::upload_scene(scene, spheres);
+            rAI::upload_scene(scene, {}, meshes);
         }
 
         camera camera{ 0.1f, 100.0f, 45.f, 1085.f / 1026.f };
@@ -56,8 +56,8 @@ namespace app
         auto last_time = clock.now();
 
         render_settings_data render_settings_data;
-        render_settings_data.max_bounces = 10;
-        render_settings_data.rays_per_pixel = 50;
+        render_settings_data.max_bounces = 8;
+        render_settings_data.rays_per_pixel = 5;
         render_settings_data.diverge_strength = 2.f;
         render_settings_data.defocus_strength = 0.f;
         render_settings_data.focus_distance = 5.f;
@@ -66,8 +66,8 @@ namespace app
         render_settings_data.sky_box.zenith_color = glm::vec3(0.36f, 0.58f, 0.8f),
         render_settings_data.sky_box.ground_color = glm::vec3(0.4f, 0.4f, 0.4f);
         render_settings_data.sky_box.sun_direction = glm::normalize(glm::vec3(1.0f, 1.0f, -1.0f));
-        render_settings_data.sky_box.sun_intensity = 50.0f;
-        render_settings_data.sky_box.sun_focus = 514.0f;
+        render_settings_data.sky_box.sun_intensity = 70.0f;
+        render_settings_data.sky_box.sun_focus = 400.0f;
         render_settings_data.is_rendering = false;
 
         const auto on_save_image = [&raytracer]()

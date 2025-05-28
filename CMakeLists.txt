@@ -23,6 +23,7 @@ find_package(CUDA REQUIRED)
 
 include_directories(
     source
+    thirdparty/
     thirdparty/GLFW/include
     thirdparty/glad/include
     thirdparty/spdlog/include

@@ -1,7 +1,5 @@
 #include "raytracer.hpp"
 
-#include "core/log.hpp"
-
 #include "raytracer/random.cuh"
 #include "raytracer/intersection.cuh"
 #include "raytracer/cuda_utils.cuh"
@@ -30,12 +28,57 @@ namespace rAI
     {
         hit_info closest_hit{ false, FLT_MAX, glm::vec3{ 0.0f }, glm::vec3{ 0.0f } };
 
-        for (int i = 0; i < scene.spheres_count; i++)
+        if (ray.direction.y != 0.0f) 
         {
-            hit_info hit = ray_sphere_intersection(ray, scene.spheres[i]);
+            const float t = -ray.origin.y / ray.direction.y;
+            if (t > 0.0f && t < closest_hit.distance) 
+            {
+                const glm::vec3 hit_point = ray.origin + ray.direction * t;
+                const float dist_squared = hit_point.x * hit_point.x + hit_point.z * hit_point.z;
+                
+                if (dist_squared <= 800.0f) // 20^2 = 400
+                {
+                    const int x_check = static_cast<int>(floor(hit_point.x));
+                    const int z_check = static_cast<int>(floor(hit_point.z));
+                    const bool is_white = (x_check + z_check) % 2 == 0;
+                    
+                    closest_hit.did_hit = true;
+                    closest_hit.distance = t;
+                    closest_hit.point = hit_point;
+                    closest_hit.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+                    closest_hit.material = material{ 
+                        is_white ? glm::vec3{ 0.6f, 0.6f, 0.6f } : glm::vec3{ 0.f, 0.2f, 0.2f }, 
+                        glm::vec3{ 0.0f }, 
+                        0.0f, 
+                        0.f 
+                    };
+                }
+            }
+        }
+
+        for (int sphere_index = 0; sphere_index < scene.spheres_count; sphere_index++)
+        {
+            const hit_info& hit = ray_sphere_intersection(ray, scene.spheres[sphere_index]);
 
             if (hit.did_hit && hit.distance < closest_hit.distance)
                 closest_hit = hit;
+        }
+
+        for (int mesh_index = 0; mesh_index < scene.meshes_count; mesh_index++)
+        {
+            const mesh_info& mesh_info = scene.meshes_info[mesh_index];
+
+            for (int triangle_index = 0; triangle_index < mesh_info.triangle_count; triangle_index++)
+            {
+                const triangle& triangle = scene.triangles[mesh_info.triangle_start + triangle_index];
+                const hit_info& hit = ray_triangle_intersection(ray, triangle);
+
+                if (hit.did_hit && hit.distance < closest_hit.distance)
+                {
+                    closest_hit = hit;
+                    closest_hit.material = mesh_info.material;
+                }
+            }
         }
 
         return closest_hit;
