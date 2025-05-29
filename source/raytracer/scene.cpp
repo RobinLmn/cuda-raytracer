@@ -32,7 +32,7 @@ namespace
         int mesh_index = 0;
         for (const mesh& mesh : meshes)
         {
-            mesh_info mesh_info{ triangle_start, static_cast<int>(mesh.triangles.size()), mesh.material };
+            mesh_info mesh_info{ triangle_start, static_cast<int>(mesh.triangles.size()), mesh.material, mesh.bounding_box };
 
             std::copy(mesh.triangles.begin(), mesh.triangles.end(), triangles.begin() + triangle_start);
             meshes_info[mesh_index] = mesh_info;

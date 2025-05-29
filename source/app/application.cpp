@@ -27,23 +27,42 @@ namespace app
         rAI::scene scene;
 
         {
-            // rAI::sphere sphere_a = rAI::sphere{ glm::vec3{ -1.2f, 0.5f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.9f, 0.1f, 0.3f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
-            // rAI::sphere sphere_b = rAI::sphere{ glm::vec3{ -0.3f, 0.5f, -5.0f }, 0.5f, rAI::material{ glm::vec3{ 0.2f, 0.8f, 0.4f}, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
-            // rAI::sphere sphere_c = rAI::sphere{ glm::vec3{ 1.2f, 0.5f, -1.0f }, 0.5f, rAI::material{ glm::vec3{ 0.4f, 0.2f, 0.9f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
+            auto make_quad = [](glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, const rAI::material& material) -> rAI::mesh 
+            {
+                const glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
 
-            // rAI::sphere sphere_d = rAI::sphere{ glm::vec3{ -5.f, 0.5f, -10.0f }, 0.5f, rAI::material{ glm::vec3{ 0.9f, 0.6f, 0.1f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
-            // rAI::sphere sphere_e = rAI::sphere{ glm::vec3{ 2.f, 0.5f, -10.0f }, 0.5f, rAI::material{ glm::vec3{ 0.1f, 0.7f, 0.8f }, glm::vec3{ 0.0f }, 0.0f, 0.f, glm::vec3{ 1.0f }, 0.f } };
+                const rAI::triangle t1{ {v0, v1, v2}, {normal, normal, normal} };
+                const rAI::triangle t2{ {v0, v2, v3}, {normal, normal, normal} };
 
-            // std::vector<rAI::sphere> spheres;
+                const glm::vec3 min = glm::min(glm::min(v0, v1), glm::min(v2, v3));
+                const glm::vec3 max = glm::max(glm::max(v0, v1), glm::max(v2, v3));
 
-            // spheres.push_back(sphere_a);
-            // spheres.push_back(sphere_b);
-            // spheres.push_back(sphere_c);
-            // spheres.push_back(sphere_d);
-            // spheres.push_back(sphere_e);
+                rAI::mesh mesh;
+                mesh.triangles = { t1, t2 };
+                mesh.material = material;
+                mesh.bounding_box = rAI::aabb{ min, max };
+
+                return mesh;
+            };
+
+            rAI::material white_material{ glm::vec3{ 0.9f, 0.9f, 0.9f }, glm::vec3{ 0.0f }, 0.0f, 0.0f, glm::vec3{ 1.0f }, 0.0f };
+            rAI::material red_material{ glm::vec3{ 0.8f, 0.2f, 0.2f }, glm::vec3{ 0.0f }, 0.0f, 0.0f, glm::vec3{ 1.0f }, 0.0f };
+            rAI::material green_material{ glm::vec3{ 0.2f, 0.8f, 0.2f }, glm::vec3{ 0.0f }, 0.0f, 0.0f, glm::vec3{ 1.0f }, 0.0f };
+            rAI::material light_material{ glm::vec3{ 0.f }, glm::vec3{ 1.f, 1.f, 1.f }, 20.f, 0.0f, glm::vec3{ 1.0f }, 0.0f };
+
+            std::vector<rAI::mesh> meshes;
 
             rAI::material bed_material{ glm::vec3{ 0.8f, 0.8f, 0.8f }, glm::vec3{ 0.0f }, 0.0f, 0.0f, glm::vec3{ 1.0f }, 0.0f };
-            std::vector<rAI::mesh> meshes = rAI::load_meshes_from_obj("../content/bed.obj", bed_material);
+            const auto bed_meshes = rAI::load_meshes_from_obj("../content/bed.obj", bed_material);
+            meshes.insert(meshes.end(), bed_meshes.begin(), bed_meshes.end());
+
+            meshes.push_back(make_quad(glm::vec3{-2, 0, 2}, glm::vec3{2, 0, 2}, glm::vec3{2, 0, -2}, glm::vec3{-2, 0, -2}, white_material)); // Floor
+            meshes.push_back(make_quad(glm::vec3{-2, 4, -2}, glm::vec3{2, 4, -2}, glm::vec3{2, 4, 2}, glm::vec3{-2, 4, 2}, white_material)); // Ceiling
+            meshes.push_back(make_quad(glm::vec3{-2, 0, -2}, glm::vec3{2, 0, -2}, glm::vec3{2, 4, -2}, glm::vec3{-2, 4, -2}, white_material)); // Back
+            meshes.push_back(make_quad(glm::vec3{-2, 0, 2}, glm::vec3{-2, 0, -2}, glm::vec3{-2, 4, -2}, glm::vec3{-2, 4, 2}, red_material)); // Left
+            meshes.push_back(make_quad(glm::vec3{2, 0, -2}, glm::vec3{2, 0, 2}, glm::vec3{2, 4, 2}, glm::vec3{2, 4, -2}, green_material)); // Right
+            meshes.push_back(make_quad(glm::vec3{2, 0, 2}, glm::vec3{-2, 0, 2}, glm::vec3{-2, 4, 2}, glm::vec3{2, 4, 2}, white_material)); // Front
+            meshes.push_back(make_quad(glm::vec3{-0.5f, 3.99f, -0.5f}, glm::vec3{0.5f, 3.99f, -0.5f}, glm::vec3{0.5f, 3.99f, 0.5f}, glm::vec3{-0.5f, 3.99f, 0.5f}, light_material)); // Light
 
             rAI::upload_scene(scene, {}, meshes);
         }

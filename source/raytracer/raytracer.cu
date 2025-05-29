@@ -28,45 +28,25 @@ namespace rAI
     {
         hit_info closest_hit{ false, FLT_MAX, glm::vec3{ 0.0f }, glm::vec3{ 0.0f } };
 
-        if (ray.direction.y != 0.0f) 
-        {
-            const float t = -ray.origin.y / ray.direction.y;
-            if (t > 0.0f && t < closest_hit.distance) 
-            {
-                const glm::vec3 hit_point = ray.origin + ray.direction * t;
-                const float dist_squared = hit_point.x * hit_point.x + hit_point.z * hit_point.z;
-                
-                if (dist_squared <= 800.0f) // 20^2 = 400
-                {
-                    const int x_check = static_cast<int>(floor(hit_point.x));
-                    const int z_check = static_cast<int>(floor(hit_point.z));
-                    const bool is_white = (x_check + z_check) % 2 == 0;
-                    
-                    closest_hit.did_hit = true;
-                    closest_hit.distance = t;
-                    closest_hit.point = hit_point;
-                    closest_hit.normal = glm::vec3(0.0f, 1.0f, 0.0f);
-                    closest_hit.material = material{ 
-                        is_white ? glm::vec3{ 0.6f, 0.6f, 0.6f } : glm::vec3{ 0.f, 0.2f, 0.2f }, 
-                        glm::vec3{ 0.0f }, 
-                        0.0f, 
-                        0.f 
-                    };
-                }
-            }
-        }
-
         for (int sphere_index = 0; sphere_index < scene.spheres_count; sphere_index++)
         {
-            const hit_info& hit = ray_sphere_intersection(ray, scene.spheres[sphere_index]);
-
+            const sphere& sphere = scene.spheres[sphere_index];
+            
+            const hit_info& hit = ray_sphere_intersection(ray, sphere);
             if (hit.did_hit && hit.distance < closest_hit.distance)
+            {
                 closest_hit = hit;
+                closest_hit.material = sphere.material;
+            }
         }
 
         for (int mesh_index = 0; mesh_index < scene.meshes_count; mesh_index++)
         {
             const mesh_info& mesh_info = scene.meshes_info[mesh_index];
+
+            const hit_info& bounding_box_hit = ray_aabb_intersection(ray, mesh_info.bounding_box);
+            if (!bounding_box_hit.did_hit)
+                continue;
 
             for (int triangle_index = 0; triangle_index < mesh_info.triangle_count; triangle_index++)
             {
@@ -101,10 +81,16 @@ namespace rAI
                 const bool specular_bounce = closest_hit.material.specular_probability >= random_float(random_state);
 
                 ray.origin = closest_hit.point;
-                ray.direction = glm::mix(diffuse, specular, closest_hit.material.smoothness * specular_bounce);
+                ray.direction = glm::normalize(glm::mix(diffuse, specular, closest_hit.material.smoothness * specular_bounce));
 
                 incoming_light += closest_hit.material.emission_strength * closest_hit.material.emission_color * ray_color;
                 ray_color *= specular_bounce ? closest_hit.material.specular_color : closest_hit.material.color;
+
+                float p = max(ray_color.r, max(ray_color.g, ray_color.b));
+                if (random_float(random_state) >= p)
+                    break;
+
+                ray_color *= 1.0f / p; 
             }
             else
             {

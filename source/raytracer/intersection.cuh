@@ -6,6 +6,7 @@
 #include "raytracer/hit_info.hpp"
 #include "raytracer/sphere.hpp"
 #include "raytracer/mesh.hpp"
+#include "raytracer/aabb.hpp"
 
 namespace rAI
 {
@@ -29,7 +30,7 @@ namespace rAI
         const glm::vec3 hit_point = r.origin + distance * r.direction;
         const glm::vec3 hit_normal = glm::normalize(hit_point - s.center);
 
-        return hit_info{true, distance, hit_point, hit_normal, s.material};
+        return hit_info{ true, distance, hit_point, hit_normal };
     }
 
     __device__ hit_info ray_triangle_intersection(const ray& ray, const triangle& triangle)
@@ -62,5 +63,21 @@ namespace rAI
         const glm::vec3 hit_normal = glm::normalize(triangle.normals[0] * w + triangle.normals[1] * u + triangle.normals[2] * v);
 
         return hit_info{true, distance, hit_point, hit_normal };
+    }
+
+    __device__ hit_info ray_aabb_intersection(const ray& ray, const aabb& aabb)
+    {
+        const glm::vec3 direction_inverse = 1.f / ray.direction;
+
+        const glm::vec3 t_min = (aabb.min - ray.origin) * direction_inverse;
+        const glm::vec3 t_max = (aabb.max - ray.origin) * direction_inverse;
+
+        const glm::vec3 t_1 = min(t_min, t_max);
+        const glm::vec3 t_2 = max(t_min, t_max);
+
+        const float t_near = max(max(t_1.x, t_1.y), t_1.z);
+        const float t_far = min(min(t_2.x, t_2.y), t_2.z);
+        
+        return hit_info{ t_near <= t_far };
     }
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "raytracer/material.hpp"
+#include "raytracer/aabb.hpp"
+
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -16,6 +18,7 @@ namespace rAI
     {
         std::vector<triangle> triangles;
         material material;
+        aabb bounding_box;
     };
 
     struct mesh_info
@@ -23,5 +26,6 @@ namespace rAI
         int triangle_start;
         int triangle_count;
         material material;
+        aabb bounding_box;
     };
 }

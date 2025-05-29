@@ -18,8 +18,8 @@ namespace app
         , far_plane{ far_plane }
         , fov{ fov }
         , aspect{ aspect }
-        , position{ 0.72f, 1.29f, 2.1f }
-        , direction{ -0.22f, -0.04f, -1.0f }
+        , position{ 0.f, 1.f, 3.85f }
+        , direction{ 0.f, 0.f, -1.0f }
         , speed{ 6.0f }
         , sensitivity{ 0.005f }
     {

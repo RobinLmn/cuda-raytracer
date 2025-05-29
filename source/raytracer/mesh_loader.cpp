@@ -31,6 +31,9 @@ namespace rAI
             current_mesh.material = material;
             current_mesh.triangles.reserve(shape.mesh.num_face_vertices.size());
 
+            current_mesh.bounding_box.min = glm::vec3{ FLT_MAX };
+            current_mesh.bounding_box.max = glm::vec3{ -FLT_MAX };
+
             size_t index_offset = 0;
             for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
             {
@@ -53,6 +56,14 @@ namespace rAI
                         attrib.vertices[3 * idx.vertex_index + 1],
                         attrib.vertices[3 * idx.vertex_index + 2]
                     };
+
+                    current_mesh.bounding_box.min.x = glm::min(current_mesh.bounding_box.min.x, tri.vertices[v].x);
+                    current_mesh.bounding_box.min.y = glm::min(current_mesh.bounding_box.min.y, tri.vertices[v].y);
+                    current_mesh.bounding_box.min.z = glm::min(current_mesh.bounding_box.min.z, tri.vertices[v].z);
+                    
+                    current_mesh.bounding_box.max.x = glm::max(current_mesh.bounding_box.max.x, tri.vertices[v].x);
+                    current_mesh.bounding_box.max.y = glm::max(current_mesh.bounding_box.max.y, tri.vertices[v].y);
+                    current_mesh.bounding_box.max.z = glm::max(current_mesh.bounding_box.max.z, tri.vertices[v].z);
 
                     if (idx.normal_index >= 0)
                     {
