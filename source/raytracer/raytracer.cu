@@ -120,14 +120,14 @@ namespace rAI
         
         glm::vec3 incoming_light = glm::vec3{ 0.0f };
 
+        const glm::vec3 direction = glm::vec3{ rendering_context.inverse_view_matrix * glm::vec4{ glm::normalize(glm::vec3{ target } / target.w), 0.0f } };
+        const glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+        const glm::vec3 up = glm::normalize(glm::cross(right, direction));
+
+        const glm::vec3 focal_point = rendering_context.camera_position + direction * rendering_context.focus_distance;
+
         for (int i = 0; i < rendering_context.rays_per_pixel; i++)
         {
-            const glm::vec3 direction = glm::vec3{ rendering_context.inverse_view_matrix * glm::vec4{ glm::normalize(glm::vec3{ target } / target.w), 0.0f } };
-            const glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.0f, 1.0f, 0.0f)));
-            const glm::vec3 up = glm::normalize(glm::cross(right, direction));
-
-            const glm::vec3 focal_point = rendering_context.camera_position + direction * rendering_context.focus_distance;
-
             const glm::vec2 jitter = random_point_in_circle(random_state) * rendering_context.diverge_strength / static_cast<float>(width);
             const glm::vec3 jittered_focal_point = focal_point + right * jitter.x + up * jitter.y;
             const glm::vec2 defocus_jitter = random_point_in_circle(random_state) * rendering_context.defocus_strength / static_cast<float>(width);
