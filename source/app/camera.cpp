@@ -20,7 +20,7 @@ namespace app
         , aspect{ aspect }
         , position{ 0.f, 1.f, 3.85f }
         , direction{ 0.f, 0.f, -1.0f }
-        , speed{ 6.0f }
+        , speed{ 3.0f }
         , sensitivity{ 0.005f }
     {
         update_inverse_projection_matrix();

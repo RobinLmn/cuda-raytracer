@@ -49,6 +49,11 @@ namespace app
             ImGui::DragFloat("Focus Distance", &settings.focus_distance, 0.1f, 0.f, 20.f);
 
             ImGui::Separator();
+            ImGui::Text("Tone Mapping");
+            ImGui::DragFloat("Exposure", &settings.exposure, 0.1f, 0.1f, 10.0f);
+            ImGui::DragFloat("Gamma", &settings.gamma, 0.1f, 1.0f, 3.0f);
+
+            ImGui::Separator();
             ImGui::Text("Sky Box Settings");
 
             ImGui::Checkbox("Is Hidden", &settings.sky_box.is_hidden);
@@ -57,6 +62,8 @@ namespace app
             ImGui::ColorEdit3("Zenith Color", (float*)glm::value_ptr(settings.sky_box.zenith_color));
             ImGui::DragFloat("Sun Focus", &settings.sky_box.sun_focus, 1.0f, 0.f, 1024.f);
             ImGui::DragFloat("SunIntensity", &settings.sky_box.sun_intensity, 1.0f, 0.f, 500.f);
+            ImGui::DragFloat("Sky Brightness", &settings.sky_box.brightness, 0.1f, 0.0f, 10.0f);
+            ImGui::DragFloat3("Sun Direction", &settings.sky_box.sun_direction.x, 0.1f);
         }
         ImGui::End();
     }

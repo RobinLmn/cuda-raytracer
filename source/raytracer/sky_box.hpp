@@ -15,5 +15,6 @@ namespace rAI
         float sun_focus;
         float sun_intensity;
         glm::vec3 sun_direction;
+        float brightness;
     };
 }

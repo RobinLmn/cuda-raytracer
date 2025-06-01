@@ -17,6 +17,9 @@ namespace app
         float focus_distance;
         
         rAI::sky_box sky_box;
+        
+        float exposure;
+        float gamma;
     };
 
     class render_settings : public core::widget

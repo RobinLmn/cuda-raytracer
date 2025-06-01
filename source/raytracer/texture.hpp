@@ -23,6 +23,9 @@ namespace rAI
         unsigned int get_id() const;
         unsigned int get_unit() const;
 
+        int get_width() const;
+        int get_height() const;
+
         cudaSurfaceObject_t get_surface() const;
         std::vector<unsigned char> read_pixels() const;
 

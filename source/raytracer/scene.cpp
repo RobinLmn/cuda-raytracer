@@ -1,5 +1,7 @@
 #include "raytracer/scene.hpp"
 
+#include "core/log.hpp"
+
 #include <cuda_runtime.h>
 
 namespace
@@ -54,9 +56,13 @@ namespace rAI
     void upload_scene(scene& scene, const std::vector<sphere>& spheres, const std::vector<mesh>& meshes)
     {
         free_scene(scene);
+        CUDA_VALIDATE();
         
         upload_spheres(scene, spheres);
+        CUDA_VALIDATE();
+
         upload_meshes(scene, meshes);
+        CUDA_VALIDATE();
     }
 
     void free_scene(scene& scene)

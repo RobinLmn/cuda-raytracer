@@ -10,14 +10,14 @@ namespace rAI
 {
     struct scene
     {
-        sphere* spheres;
-        int spheres_count;
+        sphere* spheres = nullptr;
+        int spheres_count = 0;
 
-        triangle* triangles;
-        int triangles_count;
+        triangle* triangles = nullptr;
+        int triangles_count = 0;
 
-        mesh_info* meshes_info;
-        int meshes_count;
+        mesh_info* meshes_info = nullptr;
+        int meshes_count = 0;
     };
 
     void upload_scene(scene& scene, const std::vector<sphere>& spheres, const std::vector<mesh>& meshes);

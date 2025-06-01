@@ -74,6 +74,16 @@ namespace rAI
         return unit;
     }
 
+    int texture::get_width() const
+    {
+        return width;
+    }
+
+    int texture::get_height() const
+    {
+        return height;
+    }
+
     cudaSurfaceObject_t texture::get_surface() const
     {
         return cuda_surface_write;
@@ -81,14 +91,18 @@ namespace rAI
 
     std::vector<unsigned char> texture::read_pixels() const
     {
-        glFinish();
-        
-        glBindTexture(GL_TEXTURE_2D, id);
-
         std::vector<unsigned char> pixels(width * height * 4);
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+        
+        GLuint framebuffer;
+        glGenFramebuffers(1, &framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
 
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDeleteFramebuffers(1, &framebuffer);
 
         return pixels;
     }

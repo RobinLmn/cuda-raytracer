@@ -22,6 +22,9 @@ namespace rAI
         float focus_distance;
 
         sky_box sky_box;
+        
+        float exposure;
+        float gamma;
     };
 
     class raytracer

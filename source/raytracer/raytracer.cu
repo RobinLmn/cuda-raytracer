@@ -23,7 +23,18 @@ namespace rAI
 
         const float sun = powf(max(0.0f, glm::dot(ray.direction, glm::normalize(sky.sun_direction))), sky.sun_focus) * sky.sun_intensity;
         
-        return ground_to_sky_gradient + sun;
+        return (ground_to_sky_gradient + sun) * sky.brightness;
+    }
+
+    __device__ glm::vec3 aces_tone_map(const glm::vec3& color)
+    {
+        const float a = 2.51f;
+        const float b = 0.03f;
+        const float c = 2.43f;
+        const float d = 0.59f;
+        const float e = 0.14f;
+
+        return glm::clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0f, 1.0f);
     }
 
     __device__ hit_info get_closest_hit(const scene& scene, const ray& ray)
@@ -47,7 +58,7 @@ namespace rAI
             const mesh_info& mesh_info = scene.meshes_info[mesh_index];
 
             const hit_info& bounding_box_hit = ray_aabb_intersection(ray, mesh_info.bounding_box);
-            if (!bounding_box_hit.did_hit)
+            if (!bounding_box_hit.did_hit || bounding_box_hit.distance >= closest_hit.distance)
                 continue;
 
             for (int triangle_index = 0; triangle_index < mesh_info.triangle_count; triangle_index++)
@@ -141,6 +152,10 @@ namespace rAI
 
         incoming_light /= static_cast<float>(rendering_context.rays_per_pixel);
 
+        incoming_light *= rendering_context.exposure; // Exposure
+        incoming_light = aces_tone_map(incoming_light); // Tone Mapping
+        incoming_light = glm::pow(incoming_light, glm::vec3(1.0f / rendering_context.gamma)); // Gamma correction
+
         const float4 new_color = make_float4(incoming_light.r, incoming_light.g, incoming_light.b, 1.f);
 
         if (!should_accumulate)
@@ -158,7 +173,6 @@ namespace rAI
         surf2Dwrite(accumulated_color, accumulation_surface, x * sizeof(float4), y);
 
         const float4 average_color = accumulated_color / (frame_index + 1);
-
         const uchar4 average_color_u = make_uchar4(average_color.x * 255, average_color.y * 255, average_color.z * 255, average_color.w * 255);
         surf2Dwrite(average_color_u, output_surface, x * sizeof(uchar4), y);
     }
@@ -182,6 +196,11 @@ namespace rAI
         , accumulation_texture{ width, height, cudaCreateChannelDesc<float4>() }
         , frame_index{ 0 }
     {
+        reset_accumulation();
+        CUDA_VALIDATE();
+
+        cudaDeviceSynchronize();
+        CUDA_VALIDATE();
     }
 
     __host__ void raytracer::reset_accumulation()
