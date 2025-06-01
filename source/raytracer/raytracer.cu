@@ -39,7 +39,7 @@ namespace rAI
 
     __device__ hit_info get_closest_hit(const scene& scene, const ray& ray)
     {
-        hit_info closest_hit{ false, FLT_MAX, glm::vec3{ 0.0f }, glm::vec3{ 0.0f } };
+        hit_info closest_hit{ false, FLT_MAX, glm::vec3{ 0.f }, glm::vec3{ 0.f } };
 
         for (int sphere_index = 0; sphere_index < scene.spheres_count; sphere_index++)
         {
@@ -79,11 +79,11 @@ namespace rAI
 
     __device__ glm::vec3 trace(const scene& scene, const ray& starting_ray, curandState& random_state, const int max_bounces, const sky_box& sky_box)
     {
-        glm::vec3 incoming_light{ 0.0f };
-        glm::vec3 ray_color{ 1.0f };
+        glm::vec3 incoming_light{ 0.f };
+        glm::vec3 ray_color{ 1.f };
         ray ray = starting_ray;
 
-        for (int i = 0; i < max_bounces; i++)
+        for (int bounce = 0; bounce < max_bounces; bounce++)
         {
             const hit_info& closest_hit = get_closest_hit(scene, ray);
             if (closest_hit.did_hit)
@@ -123,21 +123,21 @@ namespace rAI
         if (y >= height || x >= width)
             return;
 
-        const glm::vec2 uv = glm::vec2{ (float)x / (float)width, 1.0f - (float)y / (float)height } * 2.0f - 1.0f;
+        const glm::vec2 uv = glm::vec2{ static_cast<float>(x) / static_cast<float>(width), 1.0f - static_cast<float>(y) / static_cast<float>(height) } * 2.f - 1.f;
         const glm::vec4 target = rendering_context.inverse_projection_matrix * glm::vec4{ uv, 1.0f, 1.0f };
 
         curandState random_state;
         curand_init(y + width * x + frame_index * 719393, 0, 0, &random_state);
         
-        glm::vec3 incoming_light = glm::vec3{ 0.0f };
+        glm::vec3 incoming_light = glm::vec3{ 0.f };
 
-        const glm::vec3 direction = glm::vec3{ rendering_context.inverse_view_matrix * glm::vec4{ glm::normalize(glm::vec3{ target } / target.w), 0.0f } };
-        const glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+        const glm::vec3 direction = glm::vec3{ rendering_context.inverse_view_matrix * glm::vec4{ glm::normalize(glm::vec3{ target } / target.w), 0.f } };
+        const glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3{ 0.f, 1.f, 0.f }));
         const glm::vec3 up = glm::normalize(glm::cross(right, direction));
 
         const glm::vec3 focal_point = rendering_context.camera_position + direction * rendering_context.focus_distance;
 
-        for (int i = 0; i < rendering_context.rays_per_pixel; i++)
+        for (int ray_index = 0; ray_index < rendering_context.rays_per_pixel; ray_index++)
         {
             const glm::vec2 jitter = random_point_in_circle(random_state) * rendering_context.diverge_strength / static_cast<float>(width);
             const glm::vec3 jittered_focal_point = focal_point + right * jitter.x + up * jitter.y;
@@ -152,9 +152,9 @@ namespace rAI
 
         incoming_light /= static_cast<float>(rendering_context.rays_per_pixel);
 
-        incoming_light *= rendering_context.exposure; // Exposure
-        incoming_light = aces_tone_map(incoming_light); // Tone Mapping
-        incoming_light = glm::pow(incoming_light, glm::vec3(1.0f / rendering_context.gamma)); // Gamma correction
+        incoming_light *= rendering_context.exposure;
+        incoming_light = aces_tone_map(incoming_light);
+        incoming_light = glm::pow(incoming_light, glm::vec3{ 1.0f / rendering_context.gamma });
 
         const float4 new_color = make_float4(incoming_light.r, incoming_light.g, incoming_light.b, 1.f);
 
@@ -185,7 +185,7 @@ namespace rAI
         if (y >= height || x >= width)
             return;
 
-        const float4 clear_color = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+        const float4 clear_color = make_float4(0.f, 0.f, 0.f, 0.f);
         surf2Dwrite(clear_color, accumulation_surface, x * sizeof(float4), y);
     }
 

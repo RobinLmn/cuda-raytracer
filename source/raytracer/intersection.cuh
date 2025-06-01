@@ -10,25 +10,25 @@
 
 namespace rAI
 {
-    __device__ hit_info ray_sphere_intersection(const ray &r, const sphere &s)
+    __device__ hit_info ray_sphere_intersection(const ray& ray, const sphere& sphere)
     {
-        const glm::vec3 oc = r.origin - s.center;
-        const float a = glm::dot(r.direction, r.direction);
-        const float b = 2.0f * glm::dot(oc, r.direction);
-        const float c = glm::dot(oc, oc) - s.radius * s.radius;
+        const glm::vec3 oc = ray.origin - sphere.center;
+        const float a = glm::dot(ray.direction, ray.direction);
+        const float b = 2.f * glm::dot(oc, ray.direction);
+        const float c = glm::dot(oc, oc) - sphere.radius * sphere.radius;
 
-        const float discriminant = b * b - 4.0f * a * c;
+        const float discriminant = b * b - 4.f * a * c;
 
-        if (discriminant < 0.0f)
-            return hit_info{false, 0.0f, glm::vec3{0.0f}, glm::vec3{0.0f}};
+        if (discriminant < 0.f)
+            return hit_info{ false, 0.f, glm::vec3{ 0.f }, glm::vec3{ 0.f } };
 
         float distance = (-b - sqrt(discriminant)) / (2.0f * a);
 
         if (distance < 0.0f)
-            return hit_info{false, 0.0f, glm::vec3{0.0f}, glm::vec3{0.0f}};
+            return hit_info{ false, 0.0f, glm::vec3{ 0.f }, glm::vec3{ 0.f } };
 
-        const glm::vec3 hit_point = r.origin + distance * r.direction;
-        const glm::vec3 hit_normal = glm::normalize(hit_point - s.center);
+        const glm::vec3 hit_point = ray.origin + distance * ray.direction;
+        const glm::vec3 hit_normal = glm::normalize(hit_point - sphere.center);
 
         return hit_info{ true, distance, hit_point, hit_normal };
     }
@@ -57,12 +57,12 @@ namespace rAI
         const bool did_hit = determinant >= 1e-6f && distance >= 0 && u >= 0 && v >= 0 && w >= 0;
 
         if (!did_hit)
-            return hit_info{false, 0.0f, glm::vec3{0.0f}, glm::vec3{0.0f}};
+            return hit_info{ false, 0.f, glm::vec3{ 0.f }, glm::vec3{ 0.f } };
 
         const glm::vec3 hit_point = ray.origin + distance * ray.direction;
         const glm::vec3 hit_normal = glm::normalize(triangle.normals[0] * w + triangle.normals[1] * u + triangle.normals[2] * v);
 
-        return hit_info{true, distance, hit_point, hit_normal };
+        return hit_info{ true, distance, hit_point, hit_normal };
     }
 
     __device__ hit_info ray_aabb_intersection(const ray& ray, const aabb& aabb)

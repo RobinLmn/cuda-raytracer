@@ -4,7 +4,7 @@
 
 namespace rAI
 {
-    cuda_texture::cuda_texture(const int width, const int height, cudaChannelFormatDesc format)
+    cuda_texture::cuda_texture(const int width, const int height, const cudaChannelFormatDesc format)
     {
         cudaChannelFormatDesc channelDesc = format;
         cudaMallocArray(&array, &channelDesc, width, height, cudaArraySurfaceLoadStore);

@@ -25,7 +25,7 @@ namespace app
     class render_settings : public core::widget
     {
     public:
-        render_settings(render_settings_data& settings, const std::function<void()>& on_save_image_delegate);
+        render_settings(render_settings_data& settings, const std::function<void()>& on_save_image_delegate, const std::function<void()>& on_render_stop_delegate);
 
     public:
         void draw() override;
@@ -33,5 +33,6 @@ namespace app
     private:
         render_settings_data& settings;
         const std::function<void()> on_save_image_delegate;
+        const std::function<void()> on_render_stop_delegate;
     };
 }

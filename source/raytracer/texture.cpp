@@ -28,7 +28,7 @@ namespace rAI
 
         cudaGraphicsResource_t cuda_texture_resource;
 
-        cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D,  cudaGraphicsRegisterFlagsSurfaceLoadStore);
+        cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsSurfaceLoadStore);
         cudaGraphicsMapResources(1, &cuda_texture_resource, 0);
         cudaGraphicsSubResourceGetMappedArray(&cuda_array, cuda_texture_resource, 0, 0);
         cudaGraphicsUnmapResources(1, &cuda_texture_resource, 0);
