@@ -41,3 +41,18 @@ namespace core
 #define ASSERT(expression, ...) 
 #define ASSERT_FATAL(expression)
 #endif
+
+#include <cuda_runtime.h>
+
+#ifdef DEBUG
+#define CUDA_VALIDATE() { \
+    const auto last_cuda_error = cudaGetLastError(); \
+    if (last_cuda_error != cudaSuccess) { \
+        const char* error_name = cudaGetErrorName(last_cuda_error); \
+        const char* error_string = cudaGetErrorString(last_cuda_error); \
+        LOG_ERROR("CUDA error at {}:{}: {} ({})", __FILE__, __LINE__, error_string, error_name); \
+    } \
+}
+#else
+#define CUDA_VALIDATE()
+#endif

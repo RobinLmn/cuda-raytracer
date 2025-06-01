@@ -1,5 +1,7 @@
 #include "texture.hpp"
 
+#include "core/log.hpp"
+
 #include <vector>
 
 namespace rAI
@@ -36,7 +38,7 @@ namespace rAI
         resDesc.res.array.array = cuda_array;
         cudaCreateSurfaceObject(&cuda_surface_write, &resDesc);
 
-        cudaFreeArray(cuda_array);
+        CUDA_VALIDATE();
     }
 
     texture::~texture()

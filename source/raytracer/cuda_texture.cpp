@@ -1,5 +1,7 @@
 #include "cuda_texture.hpp"
 
+#include "core/log.hpp"
+
 namespace rAI
 {
     cuda_texture::cuda_texture(const int width, const int height, cudaChannelFormatDesc format)
@@ -10,8 +12,9 @@ namespace rAI
         cudaResourceDesc resDesc = {};
         resDesc.resType = cudaResourceTypeArray;
         resDesc.res.array.array = array;
-
         cudaCreateSurfaceObject(&surface, &resDesc);
+
+        CUDA_VALIDATE();
     }
 
     cuda_texture::~cuda_texture()
@@ -21,6 +24,8 @@ namespace rAI
             
         if (array)
             cudaFreeArray(array);
+
+        CUDA_VALIDATE();
     }
 
     cudaSurfaceObject_t cuda_texture::get_surface() const

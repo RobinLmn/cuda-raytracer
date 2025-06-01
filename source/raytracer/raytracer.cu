@@ -1,5 +1,7 @@
 #include "raytracer.hpp"
 
+#include "core/log.hpp"
+
 #include "raytracer/random.cuh"
 #include "raytracer/intersection.cuh"
 #include "raytracer/cuda_utils.cuh"
@@ -191,8 +193,10 @@ namespace rAI
         dim3 threads(thread_x, thread_y);
 
         reset_accumulation_surface<<<blocks, threads>>>(accumulation_texture.get_surface(), width, height);
-        
+        CUDA_VALIDATE();
+
         cudaDeviceSynchronize();
+        CUDA_VALIDATE();
 
         frame_index = 0;
     }
@@ -206,8 +210,10 @@ namespace rAI
         dim3 threads(thread_x, thread_y);
 
         write_to_texture<<<blocks, threads>>>(render_texture.get_surface(), accumulation_texture.get_surface(), width, height, rendering_context, scene, frame_index, should_accumulate);
+        CUDA_VALIDATE();
 
         cudaDeviceSynchronize();
+        CUDA_VALIDATE();
 
         if (should_accumulate)
             frame_index++;
