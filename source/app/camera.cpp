@@ -13,21 +13,21 @@
 
 namespace app
 {
-    camera::camera(const float near_plane, const float far_plane, const float fov, const float aspect)
+    camera::camera(const float near_plane, const float far_plane, const float fov, const float aspect, const glm::vec3& position, const glm::vec3& direction, const float speed, const float sensitivity)
         : near_plane{ near_plane }
         , far_plane{ far_plane }
         , fov{ fov }
         , aspect{ aspect }
-        , position{ 0.0f, 3.f, 5.0f }
-        , direction{ 0.0f, -0.2f, -1.0f }
-        , speed{ 6.0f }
-        , sensitivity{ 0.005f }
+        , position{ position }
+        , direction{ direction }
+        , speed{ speed }
+        , sensitivity{ sensitivity }
     {
         update_inverse_projection_matrix();
         update_inverse_view_matrix();
     }
 
-    void camera::update(float delta_time)
+    void camera::update(const float delta_time)
     {
         const glm::vec2 mouse_pos = core::input_manager::get_mouse_position();
         const glm::vec3 right = glm::cross(direction, up);
@@ -67,12 +67,12 @@ namespace app
 
 		if (core::input_manager::is_mouse_button_pressed(GLFW_MOUSE_BUTTON_2))
 		{
-            glm::vec2 delta = mouse_pos - last_mouse_position;
+            const glm::vec2 delta = mouse_pos - last_mouse_position;
 
-            float pitch_delta = delta.y * sensitivity;
-            float yaw_delta = delta.x * sensitivity;
+            const float pitch_delta = delta.y * sensitivity;
+            const float yaw_delta = delta.x * sensitivity;
+            const glm::quat rotation = glm::normalize(glm::cross(glm::angleAxis(-pitch_delta, right), glm::angleAxis(-yaw_delta, up)));
 
-            glm::quat rotation = glm::normalize(glm::cross(glm::angleAxis(-pitch_delta, right), glm::angleAxis(-yaw_delta, up)));
             direction = glm::rotate(rotation, direction);
 
             is_dirty = true;
@@ -81,9 +81,7 @@ namespace app
         last_mouse_position = mouse_pos;
 
         if (is_dirty)
-        {
             update_inverse_view_matrix();
-        }
     }
 
     void camera::update_inverse_view_matrix()
@@ -94,16 +92,6 @@ namespace app
     void camera::update_inverse_projection_matrix()
     {
         inverse_projection_matrix = glm::inverse(glm::perspective(glm::radians(fov), aspect, near_plane, far_plane));
-    }
-
-    void camera::set_speed(const float speed)
-    {
-        this->speed = speed;
-    }
-
-    void camera::set_sensitivity(const float sensitivity)
-    {
-        this->sensitivity = sensitivity;
     }
 
     glm::vec3 camera::get_position() const

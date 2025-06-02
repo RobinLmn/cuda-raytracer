@@ -99,16 +99,16 @@ namespace core
 		ImGui::SetNextWindowPos(main_viewport->Pos);
 		ImGui::SetNextWindowSize(main_viewport->Size);
 		ImGui::SetNextWindowViewport(main_viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.14f, 0.14f, 0.14f, 1.00f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4{ 0.14f, 0.14f, 0.14f, 1.f });
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 		if (docking_flags & ImGuiDockNodeFlags_PassthruCentralNode)
 			window_flags |= ImGuiWindowFlags_NoBackground;
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.f, 0.f });
 
         static bool show_dockspace = true;
 		ImGui::Begin("dockspace", &show_dockspace, window_flags);
@@ -117,7 +117,7 @@ namespace core
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar(2);
 
-			ImGui::DockSpace(ImGui::GetID("dockspace"), ImVec2(0.0f, 0.0f), docking_flags);
+			ImGui::DockSpace(ImGui::GetID("dockspace"), ImVec2{ 0.f, 0.f }, docking_flags);
 
             for (auto widget : widgets)
                 widget->draw();

@@ -7,7 +7,7 @@ namespace rAI
     class cuda_texture
     {
     public:
-        cuda_texture(const int width, const int height, cudaChannelFormatDesc format);
+        cuda_texture(const int width, const int height, const cudaChannelFormatDesc format);
         ~cuda_texture();
 
     public:

@@ -6,6 +6,8 @@
 #include <cuda_runtime.h>
 #include <cuda_surface_types.h>
 
+#include <vector>
+
 namespace rAI
 {
     class texture
@@ -21,9 +23,16 @@ namespace rAI
         unsigned int get_id() const;
         unsigned int get_unit() const;
 
+        int get_width() const;
+        int get_height() const;
+
         cudaSurfaceObject_t get_surface() const;
+        std::vector<unsigned char> read_pixels() const;
 
     private:
+        const int width;
+        const int height;
+
         unsigned int id;
         unsigned int unit;
 

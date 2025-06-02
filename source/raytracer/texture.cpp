@@ -1,11 +1,15 @@
 #include "texture.hpp"
 
+#include "core/log.hpp"
+
 #include <vector>
 
 namespace rAI
 {
     texture::texture(const int width, const int height)
-        : id{ 0 }
+        : width{ width }
+        , height{ height }
+        , id{ 0 }
         , unit{ 0 }
         , cuda_surface_write{ 0 }
     {
@@ -24,7 +28,7 @@ namespace rAI
 
         cudaGraphicsResource_t cuda_texture_resource;
 
-        cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D,  cudaGraphicsRegisterFlagsSurfaceLoadStore);
+        cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsSurfaceLoadStore);
         cudaGraphicsMapResources(1, &cuda_texture_resource, 0);
         cudaGraphicsSubResourceGetMappedArray(&cuda_array, cuda_texture_resource, 0, 0);
         cudaGraphicsUnmapResources(1, &cuda_texture_resource, 0);
@@ -34,7 +38,7 @@ namespace rAI
         resDesc.res.array.array = cuda_array;
         cudaCreateSurfaceObject(&cuda_surface_write, &resDesc);
 
-        cudaFreeArray(cuda_array);
+        CUDA_VALIDATE();
     }
 
     texture::~texture()
@@ -70,8 +74,36 @@ namespace rAI
         return unit;
     }
 
+    int texture::get_width() const
+    {
+        return width;
+    }
+
+    int texture::get_height() const
+    {
+        return height;
+    }
+
     cudaSurfaceObject_t texture::get_surface() const
     {
         return cuda_surface_write;
+    }
+
+    std::vector<unsigned char> texture::read_pixels() const
+    {
+        std::vector<unsigned char> pixels(width * height * 4);
+        
+        GLuint framebuffer;
+        glGenFramebuffers(1, &framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, id, 0);
+
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDeleteFramebuffers(1, &framebuffer);
+
+        return pixels;
     }
 }
