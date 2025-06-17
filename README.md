@@ -1,4 +1,4 @@
-# rAI: GPU-Accelerated Raytracer
+GPU-Accelerated Raytracer
 
 **rAI** is a real-time raytracer built with CUDA and OpenGL interoperability. It features progressive rendering, anti-aliasing, and depth of field effects. The engine supports both spheres and triangle meshes, and includes a physically-inspired material system with diffuse, specular, glossy, and emissive surfaces. Lighting includes a procedural sky with sun and ground gradients, and the final image is rendered in HDR with tone mapping.
 
