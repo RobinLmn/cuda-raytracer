@@ -107,8 +107,8 @@ namespace
     app::render_settings_data get_default_render_settings_data()
     {
         app::render_settings_data render_settings_data;
-        render_settings_data.max_bounces = 8;
-        render_settings_data.rays_per_pixel = 40;
+        render_settings_data.max_bounces = 5;
+        render_settings_data.rays_per_pixel = 5;
         render_settings_data.diverge_strength = 2.f;
         render_settings_data.defocus_strength = 0.f;
         render_settings_data.focus_distance = 5.f;
