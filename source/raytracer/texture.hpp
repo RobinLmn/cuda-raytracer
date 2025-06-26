@@ -17,11 +17,10 @@ namespace rAI
         ~texture();
 
     public:
-        void bind() const;
-        void unbind() const;
+        void map();
+        void unmap();
 
         unsigned int get_id() const;
-        unsigned int get_unit() const;
 
         int get_width() const;
         int get_height() const;
@@ -36,6 +35,7 @@ namespace rAI
         unsigned int id;
         unsigned int unit;
 
+        cudaGraphicsResource* cuda_texture_resource;
         cudaSurfaceObject_t cuda_surface_write;
         cudaArray_t cuda_array;
     };

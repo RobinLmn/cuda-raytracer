@@ -37,6 +37,13 @@ namespace rAI
         return glm::clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0f, 1.0f);
     }
 
+    __device__ void post_process(glm::vec3& color, const rendering_context rendering_context)
+    {
+        color *= rendering_context.exposure;
+        color = aces_tone_map(color);
+        color = glm::pow(color, glm::vec3{ 1.0f / rendering_context.gamma });
+    }
+
     __device__ hit_info get_closest_hit(const scene& scene, const ray& ray)
     {
         hit_info closest_hit{ false, FLT_MAX, glm::vec3{ 0.f }, glm::vec3{ 0.f } };
@@ -77,7 +84,7 @@ namespace rAI
         return closest_hit;
     }
 
-    __device__ glm::vec3 trace(const scene& scene, const ray& starting_ray, curandState& random_state, const int max_bounces, const sky_box& sky_box)
+    __device__ glm::vec3 trace(const scene& scene, const ray& starting_ray, uint32_t& random_state, const int max_bounces, const sky_box& sky_box)
     {
         glm::vec3 incoming_light{ 0.f };
         glm::vec3 ray_color{ 1.f };
@@ -100,10 +107,10 @@ namespace rAI
                 ray_color *= specular_bounce ? closest_hit.material.specular_color : closest_hit.material.color;
 
                 float p = max(ray_color.r, max(ray_color.g, ray_color.b));
-                if (random_float(random_state) >= p)
+                if (p < 0.001f || random_float(random_state) > p)
                     break;
 
-                ray_color *= 1.0f / p; 
+                ray_color /= p; 
             }
             else
             {
@@ -115,7 +122,7 @@ namespace rAI
         return incoming_light;
     }
 
-    __global__ void write_to_texture(cudaSurfaceObject_t output_surface, cudaSurfaceObject_t accumulation_surface, int width, int height, const rendering_context rendering_context, const scene scene, const int frame_index, const bool should_accumulate)
+    __global__ void write_to_texture(cudaSurfaceObject_t output_surface, glm::vec3* accumulation_texture, int width, int height, const rendering_context rendering_context, const scene scene, const int frame_index, const bool should_accumulate)
     {
         const int y = blockIdx.y * blockDim.y + threadIdx.y;
         const int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -126,8 +133,8 @@ namespace rAI
         const glm::vec2 uv = glm::vec2{ static_cast<float>(x) / static_cast<float>(width), 1.0f - static_cast<float>(y) / static_cast<float>(height) } * 2.f - 1.f;
         const glm::vec4 target = rendering_context.inverse_projection_matrix * glm::vec4{ uv, 1.0f, 1.0f };
 
-        curandState random_state;
-        curand_init(y + width * x + frame_index * 719393, 0, 0, &random_state);
+        const int pixel_index = y + width * x;
+        uint32_t random_state = pixel_index + frame_index * 719393;
         
         glm::vec3 incoming_light = glm::vec3{ 0.f };
 
@@ -144,7 +151,13 @@ namespace rAI
             const glm::vec2 defocus_jitter = random_point_in_circle(random_state) * rendering_context.defocus_strength / static_cast<float>(width);
 
             const glm::vec3 ray_origin = rendering_context.camera_position + right * defocus_jitter.x + up * defocus_jitter.y;
-            const glm::vec3 ray_direction = glm::normalize(jittered_focal_point - ray_origin);
+            const glm::vec3 direction = jittered_focal_point - ray_origin;
+            
+            // Prevent division by zero in normalization
+            if (glm::length(direction) < 1e-6f)
+                continue;
+                
+            const glm::vec3 ray_direction = glm::normalize(direction);
 
             ray ray{ ray_origin, ray_direction };
             incoming_light += trace(scene, ray, random_state, rendering_context.max_bounces, rendering_context.sky_box);
@@ -152,71 +165,45 @@ namespace rAI
 
         incoming_light /= static_cast<float>(rendering_context.rays_per_pixel);
 
-        incoming_light *= rendering_context.exposure;
-        incoming_light = aces_tone_map(incoming_light);
-        incoming_light = glm::pow(incoming_light, glm::vec3{ 1.0f / rendering_context.gamma });
-
-        const float4 new_color = make_float4(incoming_light.r, incoming_light.g, incoming_light.b, 1.f);
-
         if (!should_accumulate)
         {
-            const uchar4 new_color_u = make_uchar4(new_color.x * 255, new_color.y * 255, new_color.z * 255, new_color.w * 255);
+            post_process(incoming_light, rendering_context);
+
+            const uchar4 new_color_u = make_uchar4(incoming_light.r * 255, incoming_light.g * 255, incoming_light.b * 255, 255);
             surf2Dwrite(new_color_u, output_surface, x * sizeof(uchar4), y);
 
             return;
         }
 
-        float4 previous_color;
-        surf2Dread(&previous_color, accumulation_surface, x * sizeof(float4), y);
-        
-        const float4 accumulated_color = previous_color + new_color;
-        surf2Dwrite(accumulated_color, accumulation_surface, x * sizeof(float4), y);
+    	accumulation_texture[pixel_index] = (accumulation_texture[pixel_index] * static_cast<float>(frame_index) + incoming_light) / static_cast<float>(frame_index + 1);
 
-        const float4 average_color = accumulated_color / (frame_index + 1);
-        const uchar4 average_color_u = make_uchar4(average_color.x * 255, average_color.y * 255, average_color.z * 255, average_color.w * 255);
+        glm::vec3 average_color = accumulation_texture[pixel_index];
+        post_process(average_color, rendering_context);
+        
+        const uchar4 average_color_u = make_uchar4(average_color.x * 255, average_color.y * 255, average_color.z * 255, 255);
         surf2Dwrite(average_color_u, output_surface, x * sizeof(uchar4), y);
-    }
-
-    __global__ void reset_accumulation_surface(cudaSurfaceObject_t accumulation_surface, int width, int height)
-    {
-        const int y = blockIdx.y * blockDim.y + threadIdx.y;
-        const int x = blockIdx.x * blockDim.x + threadIdx.x;
-        
-        if (y >= height || x >= width)
-            return;
-
-        const float4 clear_color = make_float4(0.f, 0.f, 0.f, 0.f);
-        surf2Dwrite(clear_color, accumulation_surface, x * sizeof(float4), y);
     }
 
     __host__ raytracer::raytracer(const int width, const int height)
         : width{ width }
         , height{ height }
         , render_texture{ width, height }
-        , accumulation_texture{ width, height, cudaCreateChannelDesc<float4>() }
+        , accumulation_texture{}
         , frame_index{ 0 }
     {
-        reset_accumulation();
-        CUDA_VALIDATE();
+        const size_t render_size = width * height * sizeof(glm::vec3);
+        cudaMalloc(&accumulation_texture, render_size);
+        cudaMemset(accumulation_texture, 0, render_size);
 
-        cudaDeviceSynchronize();
         CUDA_VALIDATE();
     }
 
     __host__ void raytracer::reset_accumulation()
     {
-        const int thread_x = 16;
-        const int thread_y = 16;
+        const size_t render_size = width * height * sizeof(glm::vec3);
+        cudaMemset(accumulation_texture, 0, render_size);
 
-        dim3 blocks((width + thread_x - 1) / thread_x, (height + thread_y - 1) / thread_y);
-        dim3 threads(thread_x, thread_y);
-
-        reset_accumulation_surface<<<blocks, threads>>>(accumulation_texture.get_surface(), width, height);
         CUDA_VALIDATE();
-
-        cudaDeviceSynchronize();
-        CUDA_VALIDATE();
-
         frame_index = 0;
     }
 
@@ -228,10 +215,10 @@ namespace rAI
         dim3 blocks((width + thread_x - 1) / thread_x, (height + thread_y - 1) / thread_y);
         dim3 threads(thread_x, thread_y);
 
-        write_to_texture<<<blocks, threads>>>(render_texture.get_surface(), accumulation_texture.get_surface(), width, height, rendering_context, scene, frame_index, should_accumulate);
-        CUDA_VALIDATE();
+        render_texture.map();
+        write_to_texture<<<blocks, threads>>>(render_texture.get_surface(), accumulation_texture, width, height, rendering_context, scene, frame_index, should_accumulate);
+        render_texture.unmap();
 
-        cudaDeviceSynchronize();
         CUDA_VALIDATE();
 
         if (should_accumulate)

@@ -11,7 +11,9 @@ namespace rAI
         , height{ height }
         , id{ 0 }
         , unit{ 0 }
+        , cuda_texture_resource{ nullptr }
         , cuda_surface_write{ 0 }
+        , cuda_array{ nullptr }
     {
         glActiveTexture(GL_TEXTURE0 + unit);
 
@@ -26,16 +28,15 @@ namespace rAI
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        cudaGraphicsResource_t cuda_texture_resource;
+        cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
 
-        cudaGraphicsGLRegisterImage(&cuda_texture_resource, id, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsSurfaceLoadStore);
-        cudaGraphicsMapResources(1, &cuda_texture_resource, 0);
-        cudaGraphicsSubResourceGetMappedArray(&cuda_array, cuda_texture_resource, 0, 0);
-        cudaGraphicsUnmapResources(1, &cuda_texture_resource, 0);
-
-        cudaResourceDesc resDesc = {};
+        map();
+        unmap();
+        
+        cudaResourceDesc resDesc;
         resDesc.resType = cudaResourceTypeArray;
         resDesc.res.array.array = cuda_array;
+
         cudaCreateSurfaceObject(&cuda_surface_write, &resDesc);
 
         CUDA_VALIDATE();
@@ -47,31 +48,22 @@ namespace rAI
 
         if (cuda_surface_write)
             cudaDestroySurfaceObject(cuda_surface_write);
-
-        if (cuda_array)
-            cudaFreeArray(cuda_array);
-    }
-    
-    void texture::bind() const
-    {
-        glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(GL_TEXTURE_2D, id);
     }
 
-    void texture::unbind() const
+    void texture::map()
     {
-        glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        cudaGraphicsMapResources(1, &cuda_texture_resource, 0);
+        cudaGraphicsSubResourceGetMappedArray(&cuda_array, cuda_texture_resource, 0, 0);
+    }
+
+    void texture::unmap()
+    {
+        cudaGraphicsUnmapResources(1, &cuda_texture_resource, 0);
     }
 
     unsigned int texture::get_id() const
     {
         return id;
-    }
-
-    unsigned int texture::get_unit() const
-    {
-        return unit;
     }
 
     int texture::get_width() const

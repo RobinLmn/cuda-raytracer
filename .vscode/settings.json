@@ -74,6 +74,7 @@
         "fstream": "cpp",
         "map": "cpp",
         "set": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "__config": "cpp"
     }
 }
