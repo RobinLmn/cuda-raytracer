@@ -30,6 +30,7 @@ include_directories(
     thirdparty/glm
     thirdparty/imgui
     thirdparty/stb_image
+    thirdparty/tiny_bvh
     ${CUDA_INCLUDE_DIRS}
 )
 

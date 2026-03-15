@@ -3,6 +3,8 @@
 #include "raytracer/sphere.hpp"
 #include "raytracer/mesh.hpp"
 
+#include <tiny_bvh/tiny_bvh.h>
+
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -18,6 +20,9 @@ namespace rAI
 
         mesh_info* meshes_info = nullptr;
         int meshes_count = 0;
+
+        tinybvh::BVH_GPU::BVHNode* bvh = nullptr;
+        int bvh_nodes_count = 0;
     };
 
     void upload_scene(scene& scene, const std::vector<sphere>& spheres, const std::vector<mesh>& meshes);
